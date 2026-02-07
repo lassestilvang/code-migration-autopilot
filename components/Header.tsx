@@ -14,7 +14,7 @@ const Header: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              CodeMorph
+              Code Migration Autopilot
             </h1>
             <p className="text-xs text-gray-400 font-mono tracking-wider">AUTONOMOUS MIGRATION AGENT</p>
           </div>

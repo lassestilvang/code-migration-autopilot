@@ -1,5 +1,5 @@
 {
-  "name": "CodeMorph Autopilot",
+  "name": "Code Migration Autopilot",
   "description": "An autonomous agent that migrates legacy codebases to modern frameworks using multi-step reasoning and self-correction.",
   "requestFramePermissions": []
 }
