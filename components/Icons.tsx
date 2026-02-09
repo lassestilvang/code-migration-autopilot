@@ -1,5 +1,5 @@
 import React from 'react';
-import { siReact, siNextdotjs, siTypescript, siJavascript, siVite, siPython } from 'simple-icons';
+import { siReact, siNextdotjs, siTypescript, siJavascript, siVite, siPython, siVuedotjs, siPhp } from 'simple-icons';
 
 // Helper component to render Simple Icons
 const SimpleIcon = ({ icon, className }: { icon: any, className?: string }) => (
@@ -36,4 +36,12 @@ export const ViteIcon = ({className}: {className?: string}) => (
 
 export const PythonIcon = ({className}: {className?: string}) => (
   <SimpleIcon icon={siPython} className={className} />
+);
+
+export const VueIcon = ({className}: {className?: string}) => (
+  <SimpleIcon icon={siVuedotjs} className={className} />
+);
+
+export const PhpIcon = ({className}: {className?: string}) => (
+  <SimpleIcon icon={siPhp} className={className} />
 );

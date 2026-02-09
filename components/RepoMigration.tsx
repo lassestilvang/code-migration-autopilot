@@ -7,13 +7,13 @@ import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
 import MigrationReportModal from './MigrationReportModal';
 import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck, AlertCircle } from 'lucide-react';
-import { NextjsIcon, ReactIcon, TypeScriptIcon, JavaScriptIcon, PythonIcon } from './Icons';
+import { NextjsIcon, ReactIcon, TypeScriptIcon, JavaScriptIcon, PythonIcon, VueIcon, PhpIcon } from './Icons';
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
 
 const RepoMigration: React.FC = () => {
   const [state, setState] = useState<RepoState>({
-    url: 'https://github.com/lassestilvang/code-migration-autopilot',
+    url: '',
     branch: 'main',
     status: AgentStatus.IDLE,
     files: [], // Source
@@ -47,6 +47,11 @@ const RepoMigration: React.FC = () => {
   };
 
   const startRepoProcess = async () => {
+    if (!state.url) {
+        addLog("Please enter a valid GitHub URL.", "error");
+        return;
+    }
+
     setState(prev => ({ 
       ...prev, 
       status: AgentStatus.ANALYZING, 
@@ -412,12 +417,13 @@ const RepoMigration: React.FC = () => {
   const isWorking = state.status !== AgentStatus.IDLE && state.status !== AgentStatus.COMPLETED && state.status !== AgentStatus.ERROR;
   const isBusy = state.status === AgentStatus.ANALYZING || state.status === AgentStatus.CONVERTING;
   
-  // Helper to resolve icon based on framework name (simplified)
+  // Helper to resolve icon based on framework name
   const getFrameworkIcon = (name: string) => {
      const n = name.toLowerCase();
      if (n.includes('react')) return <ReactIcon className="w-4 h-4 text-blue-400" />;
-     if (n.includes('vue')) return <Code2 className="w-4 h-4 text-green-400" />;
+     if (n.includes('vue')) return <VueIcon className="w-4 h-4 text-green-400" />;
      if (n.includes('python')) return <PythonIcon className="w-4 h-4 text-blue-300" />;
+     if (n.includes('php') || n.includes('laravel')) return <PhpIcon className="w-4 h-4 text-indigo-400" />;
      return <Code2 className="w-4 h-4 text-gray-400" />;
   };
 
@@ -426,8 +432,31 @@ const RepoMigration: React.FC = () => {
         <div className="flex flex-col gap-6 h-full overflow-hidden">
         {/* Top Control Panel with Integrated Analysis */}
         <div className="bg-dark-800 p-4 rounded-xl border border-dark-700 flex flex-col gap-4 shrink-0 shadow-lg">
-            {/* Row 1: Input */}
+            
+            {/* Row 1: Input & Examples */}
             <div className="flex flex-col gap-2 w-full">
+                
+                {/* Examples */}
+                <div className="flex items-center gap-3 text-xs mb-1">
+                    <span className="text-gray-500 font-medium uppercase tracking-wider">Try an example:</span>
+                    <button 
+                        onClick={() => setState(prev => ({...prev, url: 'https://github.com/lassestilvang/example-create-vue'}))}
+                        disabled={isBusy}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-dark-900 border border-dark-600 hover:border-brand-500/50 hover:bg-dark-800 transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <VueIcon className="w-3.5 h-3.5 text-green-400" />
+                        Vue.js
+                    </button>
+                    <button 
+                        onClick={() => setState(prev => ({...prev, url: 'https://github.com/username/legacy-php-app'}))}
+                        disabled={isBusy}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-dark-900 border border-dark-600 hover:border-brand-500/50 hover:bg-dark-800 transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <PhpIcon className="w-3.5 h-3.5 text-indigo-400" />
+                        PHP (Legacy)
+                    </button>
+                </div>
+
                 <div className="relative w-full">
                     <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
                     <input 
@@ -457,13 +486,13 @@ const RepoMigration: React.FC = () => {
                 <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                     <button 
                         onClick={startRepoProcess}
-                        disabled={isBusy}
+                        disabled={isBusy || !state.url}
                         className={`
                         flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
-                        ${!isAnalyzed 
+                        ${!isAnalyzed && state.url
                             ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]' 
                             : 'bg-dark-700 hover:bg-dark-600 text-gray-300 border border-dark-600'}
-                        ${state.status === AgentStatus.ANALYZING ? 'opacity-70 cursor-wait' : ''}
+                        ${(state.status === AgentStatus.ANALYZING || !state.url) ? 'opacity-70 cursor-not-allowed' : ''}
                         `}
                     >
                         {state.status === AgentStatus.ANALYZING ? (

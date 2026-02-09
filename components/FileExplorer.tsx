@@ -5,7 +5,7 @@ import {
   Database, Layout, FileJson, FileType, FileImage, Settings, Package, FileText, 
   Code2, Braces, Globe, Palette, FileDigit, Box, Coffee 
 } from 'lucide-react';
-import { ReactIcon, TypeScriptIcon, JavaScriptIcon, NextjsIcon, PythonIcon, ViteIcon } from './Icons';
+import { ReactIcon, TypeScriptIcon, JavaScriptIcon, NextjsIcon, PythonIcon, ViteIcon, VueIcon, PhpIcon } from './Icons';
 
 interface FileExplorerProps {
   files: FileNode[];
@@ -32,6 +32,8 @@ const getFileIconConfig = (filename: string) => {
   if (name.endsWith('.ts')) return { icon: TypeScriptIcon, color: 'text-blue-500' };
   if (name.endsWith('.jsx')) return { icon: ReactIcon, color: 'text-yellow-400' };
   if (name.endsWith('.js')) return { icon: JavaScriptIcon, color: 'text-yellow-400' };
+  if (name.endsWith('.vue')) return { icon: VueIcon, color: 'text-green-400' };
+  if (name.endsWith('.php')) return { icon: PhpIcon, color: 'text-indigo-400' };
   if (name.endsWith('.css') || name.endsWith('.scss')) return { icon: Palette, color: 'text-pink-400' };
   if (name.endsWith('.html')) return { icon: Globe, color: 'text-orange-500' };
   if (name.endsWith('.json')) return { icon: Braces, color: 'text-yellow-600' };
