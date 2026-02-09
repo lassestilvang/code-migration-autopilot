@@ -6,7 +6,7 @@ import AgentLogs from './AgentLogs';
 import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
 import MigrationReportModal from './MigrationReportModal';
-import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck, AlertCircle } from 'lucide-react';
+import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck, AlertCircle, ExternalLink } from 'lucide-react';
 import { NextjsIcon, ReactIcon, TypeScriptIcon, JavaScriptIcon, PythonIcon, VueIcon, PhpIcon } from './Icons';
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
@@ -439,22 +439,48 @@ const RepoMigration: React.FC = () => {
                 {/* Examples */}
                 <div className="flex items-center gap-3 text-xs mb-1">
                     <span className="text-gray-500 font-medium uppercase tracking-wider">Try an example:</span>
-                    <button 
-                        onClick={() => setState(prev => ({...prev, url: 'https://github.com/lassestilvang/example-create-vue'}))}
-                        disabled={isBusy}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-dark-900 border border-dark-600 hover:border-brand-500/50 hover:bg-dark-800 transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <VueIcon className="w-3.5 h-3.5 text-green-400" />
-                        Vue.js
-                    </button>
-                    <button 
-                        onClick={() => setState(prev => ({...prev, url: 'https://github.com/username/legacy-php-app'}))}
-                        disabled={isBusy}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-dark-900 border border-dark-600 hover:border-brand-500/50 hover:bg-dark-800 transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <PhpIcon className="w-3.5 h-3.5 text-indigo-400" />
-                        PHP (Legacy)
-                    </button>
+                    
+                    {/* PHP Example */}
+                    <div className="flex items-center rounded-md bg-dark-900 border border-dark-600 overflow-hidden transition-colors hover:border-brand-500/50">
+                        <button 
+                            onClick={() => setState(prev => ({...prev, url: 'https://github.com/lassestilvang/example-php-gemini-3-hackathon'}))}
+                            disabled={isBusy}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-dark-800 transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <PhpIcon className="w-3.5 h-3.5 text-indigo-400" />
+                            PHP (Legacy)
+                        </button>
+                        <a 
+                            href="https://github.com/lassestilvang/example-php-gemini-3-hackathon" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-2 py-1.5 hover:bg-dark-800 border-l border-dark-700 text-gray-500 hover:text-white transition-colors flex items-center h-full"
+                            title="View Repository"
+                        >
+                            <ExternalLink className="w-3 h-3" />
+                        </a>
+                    </div>
+
+                    {/* Vue Example */}
+                    <div className="flex items-center rounded-md bg-dark-900 border border-dark-600 overflow-hidden transition-colors hover:border-brand-500/50">
+                        <button 
+                            onClick={() => setState(prev => ({...prev, url: 'https://github.com/lassestilvang/example-create-vue'}))}
+                            disabled={isBusy}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-dark-800 transition-colors text-gray-300 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <VueIcon className="w-3.5 h-3.5 text-green-400" />
+                            Vue.js
+                        </button>
+                        <a 
+                            href="https://github.com/lassestilvang/example-create-vue" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-2 py-1.5 hover:bg-dark-800 border-l border-dark-700 text-gray-500 hover:text-white transition-colors flex items-center h-full"
+                             title="View Repository"
+                        >
+                            <ExternalLink className="w-3 h-3" />
+                        </a>
+                    </div>
                 </div>
 
                 <div className="relative w-full">

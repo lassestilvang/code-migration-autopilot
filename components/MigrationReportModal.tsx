@@ -100,12 +100,14 @@ const MigrationReportModal: React.FC<MigrationReportModalProps> = ({ report, onC
                             <Layers className="w-5 h-5 text-gray-400" />
                             Tech Stack Transformation
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 gap-3">
                             {report.techStackChanges.map((change, idx) => (
-                                <div key={idx} className="bg-dark-900/50 border border-dark-700 rounded-lg p-3 flex items-center justify-between">
-                                    <span className="text-sm text-gray-400 font-mono">{change.from}</span>
-                                    <ArrowRight className="w-4 h-4 text-brand-500" />
-                                    <span className="text-sm text-white font-mono font-semibold">{change.to}</span>
+                                <div key={idx} className="bg-dark-900/50 border border-dark-700 rounded-lg p-3 flex items-center gap-4">
+                                    <span className="text-sm text-gray-400 font-mono flex-1 text-right truncate" title={change.from}>{change.from}</span>
+                                    <div className="bg-dark-800 rounded-full p-1 border border-dark-700 shrink-0">
+                                        <ArrowRight className="w-4 h-4 text-brand-500" />
+                                    </div>
+                                    <span className="text-sm text-white font-mono font-semibold flex-1 text-left truncate" title={change.to}>{change.to}</span>
                                 </div>
                             ))}
                         </div>
