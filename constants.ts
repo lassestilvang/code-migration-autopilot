@@ -67,6 +67,9 @@ You are a Lead Architect designing a modern Next.js 14 (App Router) project stru
 Legacy Application Context:
 {analysisSummary}
 
+Test Suite Requirement:
+{testRequirement}
+
 Task:
 Design a clean, production-ready file structure for the new Next.js application.
 Include standard files like \`package.json\`, \`tsconfig.json\`, \`app/layout.tsx\`, \`app/page.tsx\`, and any necessary components or lib utilities based on the likely needs of the legacy app.

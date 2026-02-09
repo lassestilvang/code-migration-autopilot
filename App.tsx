@@ -8,13 +8,13 @@ const App: React.FC = () => {
   const [mode, setMode] = useState<'snippet' | 'repo'>('repo');
 
   return (
-    <div className="min-h-screen flex flex-col font-sans selection:bg-brand-500/30">
+    <div className="h-screen flex flex-col font-sans selection:bg-brand-500/30 overflow-hidden bg-dark-900">
       <Header />
       
-      <main className="flex-1 max-w-[1600px] mx-auto w-full px-4 py-6 flex flex-col gap-6">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-6 flex flex-col gap-6 min-h-0">
         
         {/* Mode Switcher */}
-        <div className="flex justify-center">
+        <div className="flex justify-center shrink-0">
             <div className="bg-dark-800 p-1 rounded-lg border border-dark-700 inline-flex">
                 <button
                     onClick={() => setMode('repo')}
@@ -44,7 +44,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex-1">
+        <div className="flex-1 min-h-0 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
             {mode === 'snippet' ? <SnippetMigration /> : <RepoMigration />}
         </div>
 

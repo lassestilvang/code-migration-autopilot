@@ -16,8 +16,8 @@ const AgentLogs: React.FC<AgentLogsProps> = ({ logs }) => {
   }, [logs]);
 
   return (
-    <div className="bg-dark-800 rounded-xl border border-dark-700 overflow-hidden flex flex-col h-64 md:h-auto">
-      <div className="bg-dark-900/80 px-4 py-2 border-b border-dark-700 flex items-center gap-2">
+    <div className="bg-dark-800 rounded-xl border border-dark-700 overflow-hidden flex flex-col h-full">
+      <div className="bg-dark-900/80 px-4 py-2 border-b border-dark-700 flex items-center gap-2 shrink-0">
         <Terminal className="w-4 h-4 text-gray-400" />
         <span className="text-xs font-mono text-gray-400 uppercase">Agent Process Stream</span>
       </div>

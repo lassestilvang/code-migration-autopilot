@@ -122,10 +122,18 @@ const SnippetMigration: React.FC = () => {
   }, [state.status]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-dark-800 p-5 rounded-xl border border-dark-700 shadow-xl">
+    <div className="flex flex-col gap-8 h-full">
+      {/* Top: Process Indicators */}
+      <div className="w-full max-w-4xl mx-auto shrink-0">
+         <StepIndicator currentStatus={state.status} />
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start flex-1 min-h-0">
+        
+        {/* Left Column: Config & Logs */}
+        <div className="lg:col-span-1 space-y-6 flex flex-col h-full min-h-0">
+          <div className="bg-dark-800 p-5 rounded-xl border border-dark-700 shadow-xl shrink-0">
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Snippet Config</h2>
             
             <div className="space-y-4">
@@ -181,19 +189,22 @@ const SnippetMigration: React.FC = () => {
             </div>
           </div>
 
-          <div className="hidden lg:block h-full">
-            <AgentLogs logs={state.logs} />
+          <div className="hidden lg:flex flex-col flex-1 min-h-0 overflow-hidden">
+             {/* AgentLogs with h-full now that outer container handles constraints */}
+             <AgentLogs logs={state.logs} />
           </div>
         </div>
 
-        <div className="lg:col-span-3 space-y-6 flex flex-col h-full">
-           <StepIndicator currentStatus={state.status} />
-
+        {/* Right Column: Source, Analysis, Target */}
+        <div className="lg:col-span-3 space-y-6 flex flex-col h-full min-h-0">
+           
            {state.analysis && (
-             <AnalysisPanel analysis={state.analysis} />
+             <div className="shrink-0">
+                <AnalysisPanel analysis={state.analysis} />
+             </div>
            )}
 
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-[500px]">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
               <CodeEditor 
                 title="LEGACY SOURCE" 
                 language={state.sourceLang}
@@ -210,7 +221,7 @@ const SnippetMigration: React.FC = () => {
               />
            </div>
 
-           <div className="lg:hidden">
+           <div className="lg:hidden h-48 shrink-0">
              <AgentLogs logs={state.logs} />
            </div>
         </div>

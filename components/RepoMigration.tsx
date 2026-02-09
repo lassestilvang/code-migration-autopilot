@@ -5,7 +5,7 @@ import { analyzeRepository, generateArchitectureDiagram, generateProjectStructur
 import AgentLogs from './AgentLogs';
 import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
-import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout } from 'lucide-react';
+import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 const RepoMigration: React.FC = () => {
@@ -26,6 +26,7 @@ const RepoMigration: React.FC = () => {
   });
 
   const [activeTab, setActiveTab] = useState<'code' | 'diagram'>('code');
+  const [includeTests, setIncludeTests] = useState(false);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     setState(prev => ({
@@ -156,8 +157,8 @@ const RepoMigration: React.FC = () => {
     addLog(`Context loaded: ${context.length} chars.`, "success");
 
     // 5. Generate New Project Structure
-    addLog("Designing Next.js 14 App Router project structure...", "info");
-    const newFilePaths = await generateProjectStructure(state.analysis.summary);
+    addLog(`Designing Next.js 14 App Router project structure${includeTests ? ' with tests' : ''}...`, "info");
+    const newFilePaths = await generateProjectStructure(state.analysis.summary, includeTests);
     
     const newFileNodes: FileNode[] = buildTreeFromPaths(newFilePaths);
     setState(prev => ({ 
@@ -282,68 +283,126 @@ const RepoMigration: React.FC = () => {
   };
 
   const selectedNode = getSelectedFileData();
+  const isAnalyzed = !!state.analysis;
 
   return (
-    <div className="flex flex-col gap-6 h-full">
-      {/* Search Bar / Input */}
-      <div className="bg-dark-800 p-4 rounded-xl border border-dark-700 flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
+    <div className="flex flex-col gap-6 h-full overflow-hidden">
+      {/* Search Bar / Input Area */}
+      <div className="bg-dark-800 p-4 rounded-xl border border-dark-700 flex flex-col gap-4 shrink-0 shadow-lg">
+        {/* Row 1: Input */}
+        <div className="relative w-full">
             <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input 
                 type="text" 
                 value={state.url}
                 onChange={(e) => setState(prev => ({...prev, url: e.target.value}))}
-                disabled={state.status !== AgentStatus.IDLE}
+                disabled={state.status !== AgentStatus.IDLE && state.status !== AgentStatus.PLANNING}
                 placeholder="https://github.com/username/repository"
                 className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-10 pr-4 py-3 text-gray-200 focus:border-brand-500 focus:outline-none transition-colors"
             />
         </div>
-        
-        {state.status === AgentStatus.IDLE ? (
-             <button 
-                onClick={startRepoProcess}
-                className="bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg shadow-brand-500/20 transition-all flex items-center gap-2 whitespace-nowrap"
-             >
-                <Play className="w-4 h-4 fill-current" />
-                Analyze Repo
-             </button>
-        ) : state.status === AgentStatus.PLANNING ? (
-             <button 
-                onClick={confirmMigration}
-                className="bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 px-6 rounded-lg animate-pulse-fast shadow-lg shadow-brand-500/20 transition-all flex items-center gap-2 whitespace-nowrap"
-             >
-                <GitBranch className="w-4 h-4" />
-                Build Next.js App
-             </button>
-        ) : (
-            <div className="flex items-center gap-2 px-6 py-3 text-brand-400 font-mono text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {state.status === AgentStatus.ANALYZING ? 'Scanning...' : state.status === AgentStatus.CONVERTING ? 'Building...' : 'Done'}
-            </div>
-        )}
+
+        {/* Row 2: Controls */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+             <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                 <button 
+                    onClick={startRepoProcess}
+                    disabled={state.status !== AgentStatus.IDLE && state.status !== AgentStatus.PLANNING}
+                    className={`
+                      flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
+                      ${!isAnalyzed 
+                        ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]' 
+                        : 'bg-dark-700 hover:bg-dark-600 text-gray-300 border border-dark-600'}
+                      ${state.status === AgentStatus.ANALYZING ? 'opacity-70 cursor-wait' : ''}
+                    `}
+                 >
+                    {state.status === AgentStatus.ANALYZING ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : isAnalyzed ? (
+                        <RotateCw className="w-4 h-4" />
+                    ) : (
+                        <Play className="w-4 h-4 fill-current" />
+                    )}
+                    {state.status === AgentStatus.ANALYZING ? 'Scanning...' : isAnalyzed ? 'Re-analyze Repo' : 'Analyze Repo'}
+                 </button>
+                 
+                 <div className="h-6 w-px bg-dark-600 hidden md:block" />
+                 
+                 <button 
+                    onClick={confirmMigration}
+                    disabled={!isAnalyzed || state.status === AgentStatus.CONVERTING}
+                    className={`
+                      flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
+                      ${isAnalyzed 
+                        ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-in fade-in zoom-in-95' 
+                        : 'bg-dark-800 text-gray-600 cursor-not-allowed border border-dark-700'}
+                    `}
+                 >
+                    {state.status === AgentStatus.CONVERTING ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <GitBranch className="w-4 h-4" />
+                    )}
+                    {state.status === AgentStatus.CONVERTING ? 'Building Project...' : 'Build Next.js App'}
+                 </button>
+
+                 <label className={`
+                    flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity
+                    ${isAnalyzed ? 'opacity-100' : 'opacity-50 pointer-events-none'}
+                 `}>
+                    <div className={`
+                        w-5 h-5 rounded border flex items-center justify-center transition-colors
+                        ${includeTests ? 'bg-brand-600 border-brand-500' : 'bg-dark-900 border-dark-600'}
+                    `}>
+                        {includeTests && <Check className="w-3.5 h-3.5 text-white" />}
+                    </div>
+                    <input 
+                        type="checkbox" 
+                        checked={includeTests} 
+                        onChange={e => setIncludeTests(e.target.checked)}
+                        disabled={!isAnalyzed}
+                        className="hidden"
+                    />
+                    <span className="text-gray-300 flex items-center gap-1.5">
+                        <TestTube className="w-3.5 h-3.5" />
+                        Generate Tests
+                    </span>
+                 </label>
+             </div>
+
+             {/* Status Badge */}
+             {(state.status !== AgentStatus.IDLE) && (
+                <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-dark-900 border border-dark-700 text-xs font-mono text-gray-400">
+                    <div className={`w-2 h-2 rounded-full ${state.status === AgentStatus.ERROR ? 'bg-red-500' : 'bg-brand-500 animate-pulse'}`} />
+                    {state.status}
+                </div>
+             )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[600px]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
         {/* Left Sidebar: File Tree */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
-            <FileExplorer 
-                files={state.activeTree === 'source' ? state.files : state.generatedFiles} 
-                selectedFile={state.selectedFile} 
-                activeTree={state.activeTree}
-                onToggleTree={(mode) => setState(prev => ({ ...prev, activeTree: mode }))}
-                onSelectFile={(path) => setState(prev => ({...prev, selectedFile: path}))}
-            />
-            <div className="flex-1 min-h-[200px]">
-                <AgentLogs logs={state.logs} />
+        <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-0">
+            <div className="flex-[3] min-h-0 overflow-hidden rounded-xl border border-dark-700 shadow-sm">
+                 <FileExplorer 
+                    files={state.activeTree === 'source' ? state.files : state.generatedFiles} 
+                    selectedFile={state.selectedFile} 
+                    activeTree={state.activeTree}
+                    onToggleTree={(mode) => setState(prev => ({ ...prev, activeTree: mode }))}
+                    onSelectFile={(path) => setState(prev => ({...prev, selectedFile: path}))}
+                />
+            </div>
+            <div className="flex-[2] min-h-0 overflow-hidden">
+                 <AgentLogs logs={state.logs} />
             </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="lg:col-span-9 flex flex-col gap-4">
+        <div className="lg:col-span-9 flex flex-col gap-4 h-full min-h-0">
             
             {/* Context Header: Analysis Summary */}
             {state.analysis && (
-                <div className="bg-dark-800 rounded-xl border border-dark-700 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="bg-dark-800 rounded-xl border border-dark-700 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 shadow-sm animate-in fade-in slide-in-from-top-2">
                     <div>
                         <div className="flex items-center gap-2 text-gray-400 text-xs font-mono uppercase tracking-wider mb-1">
                             <span>Legacy: {state.analysis.detectedFramework}</span>
@@ -371,7 +430,7 @@ const RepoMigration: React.FC = () => {
             )}
 
             {/* Viewer */}
-            <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden relative min-h-[500px]">
+            <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden relative min-h-0 shadow-lg">
                 {activeTab === 'diagram' ? (
                     <div className="absolute inset-0 p-4 flex items-center justify-center bg-dark-900">
                         {state.diagram ? (

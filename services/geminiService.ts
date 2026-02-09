@@ -85,10 +85,15 @@ export const analyzeRepository = async (
   }
 };
 
-export const generateProjectStructure = async (analysisSummary: string): Promise<string[]> => {
+export const generateProjectStructure = async (analysisSummary: string, includeTests: boolean = false): Promise<string[]> => {
   const client = createClient();
+  const testReq = includeTests 
+    ? "Include comprehensive test files (e.g., __tests__/*.test.tsx, *.spec.ts) for main components and utilities using Vitest/React Testing Library." 
+    : "Do not include any test files or test configuration.";
+
   const prompt = PROJECT_SCAFFOLD_PROMPT
-    .replace('{analysisSummary}', analysisSummary);
+    .replace('{analysisSummary}', analysisSummary)
+    .replace('{testRequirement}', testReq);
 
   const response = await client.models.generateContent({
     model: 'gemini-3-pro-preview',
