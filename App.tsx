@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import Header from './components/Header';
 import SnippetMigration from './components/SnippetMigration';
 import RepoMigration from './components/RepoMigration';
-import { Code2, GitBranch } from 'lucide-react';
+import { Code2, GitBranch, Sparkles } from 'lucide-react';
 
 const App: React.FC = () => {
   const [mode, setMode] = useState<'snippet' | 'repo'>('repo');
@@ -11,35 +12,48 @@ const App: React.FC = () => {
     <div className="h-screen flex flex-col font-sans selection:bg-brand-500/30 overflow-hidden bg-dark-900">
       <Header />
       
-      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-6 flex flex-col gap-6 min-h-0">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 py-4 flex flex-col gap-4 min-h-0">
         
-        {/* Mode Switcher */}
-        <div className="flex justify-center shrink-0">
-            <div className="bg-dark-800 p-1 rounded-lg border border-dark-700 inline-flex">
-                <button
-                    onClick={() => setMode('repo')}
-                    className={`
-                        flex items-center gap-2 px-6 py-2 rounded-md text-sm font-semibold transition-all duration-300
-                        ${mode === 'repo' 
-                            ? 'bg-brand-600 text-white shadow-lg shadow-brand-900/50' 
-                            : 'text-gray-400 hover:text-white hover:bg-dark-700'}
-                    `}
-                >
-                    <GitBranch className="w-4 h-4" />
-                    Repository Autopilot
-                </button>
-                <button
-                    onClick={() => setMode('snippet')}
-                    className={`
-                        flex items-center gap-2 px-6 py-2 rounded-md text-sm font-semibold transition-all duration-300
-                        ${mode === 'snippet' 
-                            ? 'bg-brand-600 text-white shadow-lg shadow-brand-900/50' 
-                            : 'text-gray-400 hover:text-white hover:bg-dark-700'}
-                    `}
-                >
-                    <Code2 className="w-4 h-4" />
-                    Snippet Mode
-                </button>
+        {/* Compact Hero Section */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 shrink-0 animate-in fade-in slide-in-from-top-4 duration-700 bg-dark-800/30 p-3 rounded-xl border border-dark-700/30">
+            <div className="text-left flex-1">
+                <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                  Bring your old dusty side-projects into the <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-blue-500">Agentic Era</span>… 🚀
+                </h2>
+                <p className="text-gray-400 text-xs flex items-center gap-1.5 mt-1">
+                  <Sparkles className="w-3 h-3 text-brand-400" />
+                  Autonomous refactoring from legacy frameworks to modern architecture.
+                </p>
+            </div>
+
+            {/* Mode Switcher */}
+            <div className="flex shrink-0">
+                <div className="bg-dark-800 p-0.5 rounded-lg border border-dark-700 inline-flex shadow-sm">
+                    <button
+                        onClick={() => setMode('repo')}
+                        className={`
+                            flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-300
+                            ${mode === 'repo' 
+                                ? 'bg-brand-600 text-white shadow-md shadow-brand-900/50' 
+                                : 'text-gray-400 hover:text-white hover:bg-dark-700'}
+                        `}
+                    >
+                        <GitBranch className="w-3.5 h-3.5" />
+                        Repo Autopilot
+                    </button>
+                    <button
+                        onClick={() => setMode('snippet')}
+                        className={`
+                            flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-300
+                            ${mode === 'snippet' 
+                                ? 'bg-brand-600 text-white shadow-md shadow-brand-900/50' 
+                                : 'text-gray-400 hover:text-white hover:bg-dark-700'}
+                        `}
+                    >
+                        <Code2 className="w-3.5 h-3.5" />
+                        Snippet Mode
+                    </button>
+                </div>
             </div>
         </div>
 
