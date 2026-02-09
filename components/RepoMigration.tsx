@@ -192,6 +192,25 @@ const RepoMigration: React.FC = () => {
     addLog("Migration Complete. System Ready.", "success");
   };
 
+  const handleFileSelect = async (path: string) => {
+    setState(prev => ({ ...prev, selectedFile: path }));
+    
+    // Check if content needs to be fetched for the source tree
+    if (state.activeTree === 'source') {
+        const node = flattenFiles(state.files).find(f => f.path === path);
+        // Only fetch if content is undefined
+        if (node && node.content === undefined && node.type === 'file') {
+             try {
+                 const content = await fetchFileContent(state.url, path);
+                 updateFileContent(path, content, 'source');
+             } catch (e) {
+                 console.error("Error fetching file content:", e);
+                 updateFileContent(path, `// Error loading content for ${path}\n// ${(e as Error).message}`, 'source');
+             }
+        }
+    }
+  };
+
   // --- Helpers ---
 
   // Build tree from flat path list for Target view
@@ -439,7 +458,7 @@ const RepoMigration: React.FC = () => {
                         selectedFile={state.selectedFile} 
                         activeTree={state.activeTree}
                         onToggleTree={(mode) => setState(prev => ({ ...prev, activeTree: mode }))}
-                        onSelectFile={(path) => setState(prev => ({...prev, selectedFile: path}))}
+                        onSelectFile={handleFileSelect}
                     />
                 </div>
                 <div className="flex-[2] min-h-0 overflow-hidden">

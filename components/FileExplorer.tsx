@@ -18,17 +18,28 @@ const FileItem: React.FC<{
 }> = ({ node, depth, onSelect, selected }) => {
   const [isOpen, setIsOpen] = React.useState(true);
 
+  // Styling constants
+  const baseIndent = 12; // Base padding
+  const depthIndent = 14; // Pixels per depth level
+
+  // Calculated indent style for the content container
+  const rowStyle = { paddingLeft: `${baseIndent + (depth * depthIndent)}px` };
+
   if (node.type === 'dir') {
     return (
       <div>
         <div 
-          className="flex items-center gap-1.5 py-1 px-2 hover:bg-dark-800 cursor-pointer text-gray-400 transition-colors select-none"
-          style={{ paddingLeft: `${depth * 12 + 8}px` }}
+          className="flex items-center gap-1 py-1.5 pr-2 hover:bg-dark-800 cursor-pointer text-gray-400 transition-colors select-none group"
+          style={rowStyle}
           onClick={() => setIsOpen(!isOpen)}
         >
-          {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-          <Folder className="w-3.5 h-3.5 text-blue-400" />
-          <span className="text-xs font-medium">{node.name}</span>
+          {/* Chevron container to ensure alignment */}
+          <span className="w-4 h-4 flex items-center justify-center shrink-0 text-gray-500 group-hover:text-gray-300">
+             {isOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </span>
+          
+          <Folder className="w-4 h-4 text-blue-400/80 group-hover:text-blue-400 shrink-0 mr-1.5" />
+          <span className="text-xs font-medium truncate">{node.name}</span>
         </div>
         {isOpen && node.children && (
           <div>
@@ -50,20 +61,23 @@ const FileItem: React.FC<{
   return (
     <div 
       className={`
-        flex items-center justify-between py-1 px-2 cursor-pointer transition-all border-l-2
+        flex items-center py-1.5 pr-2 cursor-pointer transition-all border-l-2 gap-1 group
         ${selected ? 'bg-brand-900/20 border-brand-500 text-brand-100' : 'border-transparent hover:bg-dark-800 text-gray-400'}
       `}
-      style={{ paddingLeft: `${depth * 12 + 8}px` }}
+      style={rowStyle}
       onClick={() => onSelect(node.path)}
     >
-      <div className="flex items-center gap-2 overflow-hidden">
-        <FileCode className={`w-3.5 h-3.5 ${selected ? 'text-brand-400' : 'text-gray-500'}`} />
-        <span className="text-xs truncate">{node.name}</span>
-      </div>
+      {/* Spacer to align with chevron */}
+      <span className="w-4 h-4 shrink-0" />
       
-      {node.status === 'migrating' && <Loader2 className="w-3 h-3 animate-spin text-brand-400" />}
-      {node.status === 'done' && <CheckCircle className="w-3 h-3 text-brand-500" />}
-      {node.status === 'error' && <AlertCircle className="w-3 h-3 text-red-500" />}
+      <FileCode className={`w-4 h-4 shrink-0 mr-1.5 ${selected ? 'text-brand-400' : 'text-gray-500 group-hover:text-gray-400'}`} />
+      
+      <span className="text-xs truncate flex-1">{node.name}</span>
+      
+      {/* Status Icons aligned to right */}
+      {node.status === 'migrating' && <Loader2 className="w-3.5 h-3.5 animate-spin text-brand-400 shrink-0" />}
+      {node.status === 'done' && <CheckCircle className="w-3.5 h-3.5 text-brand-500 shrink-0" />}
+      {node.status === 'error' && <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />}
     </div>
   );
 };
@@ -91,7 +105,7 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ files, onSelectFile, select
           Next.js
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto py-2">
+      <div className="flex-1 overflow-y-auto py-2 custom-scrollbar">
         {files.length === 0 ? (
           <div className="p-4 text-center">
             <p className="text-xs text-gray-600 italic">
