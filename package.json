@@ -16,7 +16,8 @@
     "uuid": "^13.0.0",
     "prismjs": "1.29.0",
     "react-simple-code-editor": "0.13.1",
-    "jszip": "3.10.1"
+    "jszip": "3.10.1",
+    "simple-icons": "14.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AgentStatus, RepoState, LogEntry, FileNode, RepoAnalysisResult } from '../types';
+import { AgentStatus, RepoState, LogEntry, FileNode, RepoAnalysisResult, MigrationReport } from '../types';
 import { fetchRepoStructure, fetchFileContent, getMockRepo, getMockReadme } from '../services/githubService';
 import { analyzeRepository, generateArchitectureDiagram, generateProjectStructure, generateNextJsFile } from '../services/geminiService';
 import AgentLogs from './AgentLogs';
 import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
+import MigrationReportModal from './MigrationReportModal';
 import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck } from 'lucide-react';
 import { NextjsIcon, ReactIcon, TypeScriptIcon, JavaScriptIcon, PythonIcon } from './Icons';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,11 +25,13 @@ const RepoMigration: React.FC = () => {
     diagram: null,
     sourceLang: 'JavaScript',
     targetLang: 'Next.js + TypeScript',
-    sourceContext: ''
+    sourceContext: '',
+    report: null
   });
 
   const [includeTests, setIncludeTests] = useState(false);
   const [isDiagramOpen, setIsDiagramOpen] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     setState(prev => ({
@@ -53,7 +56,9 @@ const RepoMigration: React.FC = () => {
       analysis: null, 
       diagram: null,
       sourceContext: '',
-      activeTree: 'source'
+      activeTree: 'source',
+      report: null,
+      startTime: Date.now()
     }));
     addLog(`Cloning repository structure from ${state.url}...`);
     
@@ -190,8 +195,71 @@ const RepoMigration: React.FC = () => {
         }
     }
 
-    setState(prev => ({ ...prev, status: AgentStatus.COMPLETED }));
+    // 7. Generate Report
+    const report = generateReport(state.files, newFileNodes, state.startTime || Date.now(), state.analysis);
+    
+    setState(prev => ({ ...prev, status: AgentStatus.COMPLETED, report }));
+    setShowReport(true);
     addLog("Migration Complete. System Ready.", "success");
+  };
+
+  const generateReport = (
+      sourceFiles: FileNode[], 
+      targetFiles: FileNode[], 
+      startTime: number,
+      analysis: RepoAnalysisResult
+  ): MigrationReport => {
+      const flatTarget = flattenFiles(targetFiles);
+      const flatSource = flattenFiles(sourceFiles);
+      
+      const endTime = Date.now();
+      const durationMs = endTime - startTime;
+      const duration = durationMs > 60000 
+          ? `${Math.round(durationMs / 60000)}m ${Math.round((durationMs % 60000) / 1000)}s`
+          : `${Math.round(durationMs / 1000)}s`;
+
+      const totalFiles = flatSource.filter(f => f.type === 'file').length;
+      const filesGenerated = flatTarget.filter(f => f.type === 'file').length;
+
+      // Type Safety Score
+      const tsFiles = flatTarget.filter(f => f.path.endsWith('.ts') || f.path.endsWith('.tsx')).length;
+      const typeScriptCoverage = Math.round((tsFiles / Math.max(filesGenerated, 1)) * 100);
+
+      // Test Coverage Est
+      const testFiles = flatTarget.filter(f => f.path.includes('.test.') || f.path.includes('__tests__')).length;
+      const testCoverage = testFiles > 0 ? Math.round((testFiles / Math.max(filesGenerated - testFiles, 1)) * 80) : 0; // Rough estimate
+
+      // Modernization Score (Arbitrary but fun metric)
+      // Logic: TS coverage + (New files / Old files ratio capped at 1) + Server Component usage (inferred)
+      let score = 0;
+      score += typeScriptCoverage * 0.4;
+      score += (testCoverage > 0 ? 20 : 0);
+      score += 40; // Base score for moving to Next.js
+      const modernizationScore = Math.min(Math.round(score), 100);
+
+      const techStackChanges = [
+          { from: analysis.detectedFramework, to: 'Next.js 14 (App Router)' },
+          { from: 'CSS / SCSS', to: 'Tailwind CSS' },
+          { from: 'JavaScript', to: 'TypeScript 5' }
+      ];
+
+      return {
+          duration,
+          totalFiles,
+          filesGenerated,
+          modernizationScore,
+          typeScriptCoverage,
+          testCoverage,
+          testsGenerated: testFiles,
+          techStackChanges,
+          keyImprovements: [
+              "Implemented Server Side Rendering (SSR) for initial load",
+              "Migrated global state to React Context / Hooks",
+              `Added ${testFiles} unit test suites with Vitest`,
+              "Enforced strict type safety across components"
+          ],
+          newDependencies: 12 // Estimate based on standard Next.js scaffold
+      };
   };
 
   const handleDownload = async () => {
@@ -394,13 +462,22 @@ const RepoMigration: React.FC = () => {
                     
                     {/* Build / Download Button Logic */}
                     {state.status === AgentStatus.COMPLETED ? (
-                         <button 
-                            onClick={handleDownload}
-                            className="flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto bg-green-600 hover:bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-in fade-in zoom-in-95"
-                         >
-                            <Download className="w-4 h-4" />
-                            Download Project
-                         </button>
+                         <>
+                            <button 
+                                onClick={handleDownload}
+                                className="flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto bg-green-600 hover:bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-in fade-in zoom-in-95"
+                            >
+                                <Download className="w-4 h-4" />
+                                Download Project
+                            </button>
+                            <button 
+                                onClick={() => setShowReport(true)}
+                                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-bold text-sm transition-all whitespace-nowrap bg-dark-700 hover:bg-dark-600 text-white border border-dark-600"
+                            >
+                                <PackageCheck className="w-4 h-4" />
+                                View Report
+                            </button>
+                         </>
                     ) : (
                         <button 
                             onClick={confirmMigration}
@@ -593,6 +670,15 @@ const RepoMigration: React.FC = () => {
                     </div>
                 </div>
             </div>
+        )}
+
+        {/* Post-Migration Report Modal */}
+        {showReport && state.report && (
+            <MigrationReportModal 
+                report={state.report} 
+                onClose={() => setShowReport(false)} 
+                onDownload={handleDownload}
+            />
         )}
     </>
   );

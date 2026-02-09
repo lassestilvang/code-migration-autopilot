@@ -1,3 +1,4 @@
+
 export enum AgentStatus {
   IDLE = 'IDLE',
   ANALYZING = 'ANALYZING',
@@ -56,6 +57,19 @@ export interface FileNode {
   children?: FileNode[];
 }
 
+export interface MigrationReport {
+  duration: string;
+  totalFiles: number;
+  filesGenerated: number;
+  modernizationScore: number; // 0-100
+  typeScriptCoverage: number; // percentage
+  testCoverage: number; // estimated percentage
+  testsGenerated: number;
+  techStackChanges: { from: string; to: string }[];
+  keyImprovements: string[];
+  newDependencies: number;
+}
+
 export interface RepoState {
   url: string;
   branch: string;
@@ -70,6 +84,8 @@ export interface RepoState {
   sourceLang: string;
   targetLang: string;
   sourceContext: string; // Aggregated content of source files for context
+  startTime?: number; // For duration calculation
+  report: MigrationReport | null;
 }
 
 export const LANGUAGES = [
