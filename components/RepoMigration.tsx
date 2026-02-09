@@ -126,7 +126,7 @@ const RepoMigration: React.FC = () => {
             }
         }
 
-        if (hasKey) {
+        if (hasKey || process.env.API_KEY) {
              const diagram = await generateArchitectureDiagram(analysis.architectureDescription);
              if (diagram) {
                  setState(prev => ({ ...prev, diagram }));
