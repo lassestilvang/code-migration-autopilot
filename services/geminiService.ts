@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { 
   ANALYSIS_PROMPT_TEMPLATE, 
   CONVERSION_PROMPT_TEMPLATE, 
@@ -14,6 +14,32 @@ const getApiKey = () => process.env.API_KEY || '';
 
 const createClient = () => new GoogleGenAI({ apiKey: getApiKey() });
 
+// Helper: Exponential Backoff Retry for 503 Errors
+const withRetry = async <T>(
+  fn: () => Promise<T>, 
+  retries = 3, 
+  baseDelay = 2000
+): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error: any) {
+    // Check for 503 or overload messages
+    const isOverloaded = error.status === 503 || 
+                         error.message?.includes('503') || 
+                         error.message?.includes('high demand') ||
+                         error.message?.includes('overloaded') ||
+                         error.message?.includes('UNAVAILABLE');
+                         
+    if (retries > 0 && isOverloaded) {
+      console.warn(`Gemini API overloaded (503). Retrying operation... attempts left: ${retries}`);
+      // Wait for baseDelay * (2 ^ (3 - retries)) -- Simple exponential: 2s, 4s, 8s
+      await new Promise(resolve => setTimeout(resolve, baseDelay));
+      return withRetry(fn, retries - 1, baseDelay * 2);
+    }
+    throw error;
+  }
+};
+
 export const analyzeCode = async (
   sourceCode: string,
   sourceLang: string,
@@ -24,26 +50,26 @@ export const analyzeCode = async (
     .replace('{sourceLang}', sourceLang)
     .replace('{targetLang}', targetLang);
   
-  const response = await client.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt + "\n\nSource Code:\n" + sourceCode,
-    config: {
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 1024 } 
-    }
-  });
-
-  const text = response.text || "{}";
   try {
+    const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt + "\n\nSource Code:\n" + sourceCode,
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 1024 } 
+        }
+    }));
+
+    const text = response.text || "{}";
     return JSON.parse(text) as AnalysisResult;
   } catch (e) {
-    console.error("Failed to parse analysis JSON", e);
+    console.error("Failed to analyze code", e);
     return {
-      summary: "Failed to generate analysis.",
+      summary: "Failed to generate analysis due to API error or parsing issue.",
       complexity: "Medium",
       dependencies: [],
       patterns: [],
-      risks: ["JSON Parsing Failed"]
+      risks: ["API Error / Parsing Failed"]
     };
   }
 };
@@ -57,17 +83,17 @@ export const analyzeRepository = async (
     .replace('{fileList}', fileList)
     .replace('{readme}', readme);
 
-  const response = await client.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 2048 }
-    }
-  });
-
-  const text = response.text || "{}";
   try {
+    const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 2048 }
+        }
+    }));
+
+    const text = response.text || "{}";
     return JSON.parse(text) as RepoAnalysisResult;
   } catch (e) {
     console.error("Failed to parse repo analysis JSON", e);
@@ -77,7 +103,7 @@ export const analyzeRepository = async (
       complexity: "High",
       dependencies: [],
       patterns: [],
-      risks: [],
+      risks: ["API Error"],
       detectedFramework: "Unknown",
       recommendedTarget: "Next.js + TypeScript",
       architectureDescription: "A generic software architecture diagram."
@@ -95,16 +121,16 @@ export const generateProjectStructure = async (analysisSummary: string, includeT
     .replace('{analysisSummary}', analysisSummary)
     .replace('{testRequirement}', testReq);
 
-  const response = await client.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 1024 }
-    }
-  });
-
   try {
+    const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 1024 }
+        }
+    }));
+
     const text = response.text || "[]";
     return JSON.parse(text) as string[];
   } catch (e) {
@@ -125,17 +151,22 @@ export const generateNextJsFile = async (
     .replace('{targetFilePath}', targetFilePath)
     .replace('{sourceContext}', safeContext);
 
-  const response = await client.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt,
-    config: {
-      thinkingConfig: { thinkingBudget: 2048 }
-    }
-  });
+  try {
+    const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+            thinkingConfig: { thinkingBudget: 2048 }
+        }
+    }));
 
-  let code = response.text || "";
-  code = code.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '');
-  return code;
+    let code = response.text || "";
+    code = code.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '');
+    return code;
+  } catch (e) {
+    console.error(`Failed to generate file ${targetFilePath}`, e);
+    throw e; // Rethrow to be handled by caller UI
+  }
 };
 
 export const generateArchitectureDiagram = async (description: string): Promise<string> => {
@@ -146,7 +177,7 @@ export const generateArchitectureDiagram = async (description: string): Promise<
   System Description: ${description}`;
 
   try {
-    const response = await client.models.generateContent({
+    const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
       model: 'gemini-3-pro-image-preview',
       contents: {
         parts: [{ text: prompt }]
@@ -157,7 +188,7 @@ export const generateArchitectureDiagram = async (description: string): Promise<
           imageSize: "1K"
         }
       }
-    });
+    }));
 
     // Extract image
     for (const part of response.candidates?.[0]?.content?.parts || []) {
@@ -185,17 +216,22 @@ export const convertCode = async (
     .replace('{analysisJson}', JSON.stringify(analysis))
     .replace('{sourceCode}', sourceCode);
 
-  const response = await client.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt,
-    config: {
-      thinkingConfig: { thinkingBudget: 2048 } 
-    }
-  });
+  try {
+    const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          thinkingConfig: { thinkingBudget: 2048 } 
+        }
+    }));
 
-  let code = response.text || "";
-  code = code.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '');
-  return code;
+    let code = response.text || "";
+    code = code.replace(/^```[a-z]*\n/i, '').replace(/\n```$/, '');
+    return code;
+  } catch (e) {
+    console.error("Code conversion failed", e);
+    throw e;
+  }
 };
 
 export const verifyCode = async (
@@ -209,25 +245,29 @@ export const verifyCode = async (
     .replace('{targetLang}', targetLang)
     .replace('{targetCode}', targetCode);
 
-  const response = await client.models.generateContent({
-    model: 'gemini-3-pro-preview',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 1024 }
-    }
-  });
-
-  const text = response.text || "{}";
   try {
-    const result = JSON.parse(text);
-    return {
-      passed: result.passed,
-      issues: result.issues || [],
-      fixedCode: result.fixedCode
-    };
+    const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          thinkingConfig: { thinkingBudget: 1024 }
+        }
+    }));
+
+    const text = response.text || "{}";
+    try {
+        const result = JSON.parse(text);
+        return {
+        passed: result.passed,
+        issues: result.issues || [],
+        fixedCode: result.fixedCode
+        };
+    } catch (parseError) {
+        return { passed: true, issues: ["Verification parsing failed"] };
+    }
   } catch (e) {
-    console.error("Failed to parse verification JSON", e);
-    return { passed: true, issues: ["Verification parsing failed"] };
+    console.error("Failed to verify code", e);
+    return { passed: true, issues: ["Verification failed due to API Error"] };
   }
 };
