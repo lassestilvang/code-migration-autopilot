@@ -6,7 +6,7 @@ import AnalysisPanel from './AnalysisPanel';
 import { AgentStatus, MigrationState, LogEntry, LANGUAGES } from '../types';
 import { DEFAULT_SOURCE_CODE } from '../constants';
 import { analyzeCode, convertCode, verifyCode } from '../services/geminiService';
-import { Play, RotateCcw, ArrowRight } from 'lucide-react';
+import { Play, RotateCcw, ArrowRight, Code, Zap, FileCode2, Terminal } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 const SnippetMigration: React.FC = () => {
@@ -133,42 +133,67 @@ const SnippetMigration: React.FC = () => {
         
         {/* Left Column: Config & Logs */}
         <div className="lg:col-span-1 space-y-6 flex flex-col h-full min-h-0">
-          <div className="bg-dark-800 p-5 rounded-xl border border-dark-700 shadow-xl shrink-0">
-            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Snippet Config</h2>
+          <div className="bg-dark-800 p-5 rounded-xl border border-dark-700 shadow-xl shrink-0 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-3 opacity-10">
+                <Terminal className="w-24 h-24 text-white" />
+            </div>
             
-            <div className="space-y-4">
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <FileCode2 className="w-4 h-4 text-brand-500" />
+                Snippet Config
+            </h2>
+            
+            <div className="space-y-4 relative z-10">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">SOURCE LANGUAGE</label>
-                <select 
-                  value={state.sourceLang}
-                  onChange={(e) => setState(prev => ({...prev, sourceLang: e.target.value}))}
-                  disabled={state.status !== AgentStatus.IDLE}
-                  className="w-full bg-dark-900 border border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand-500 focus:outline-none transition-colors"
-                >
-                  {LANGUAGES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
-                </select>
+                <label className="block text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1">
+                    <Code className="w-3 h-3" />
+                    SOURCE LANGUAGE
+                </label>
+                <div className="relative">
+                    <select 
+                    value={state.sourceLang}
+                    onChange={(e) => setState(prev => ({...prev, sourceLang: e.target.value}))}
+                    disabled={state.status !== AgentStatus.IDLE}
+                    className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-3 pr-8 py-2.5 text-sm text-gray-200 focus:border-brand-500 focus:outline-none transition-colors appearance-none"
+                    >
+                    {LANGUAGES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <Code className="w-4 h-4 text-gray-500" />
+                    </div>
+                </div>
               </div>
 
               <div className="flex justify-center">
-                 <ArrowRight className="text-dark-600 w-5 h-5 rotate-90 md:rotate-0" />
+                 <div className="bg-dark-900 rounded-full p-1.5 border border-dark-600">
+                    <ArrowRight className="text-gray-400 w-4 h-4 rotate-90 md:rotate-0" />
+                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-1">TARGET FRAMEWORK</label>
-                <select 
-                  value={state.targetLang}
-                  onChange={(e) => setState(prev => ({...prev, targetLang: e.target.value}))}
-                  disabled={state.status !== AgentStatus.IDLE}
-                  className="w-full bg-dark-900 border border-dark-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:border-brand-500 focus:outline-none transition-colors"
-                >
-                   {LANGUAGES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
-                </select>
+                <label className="block text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    TARGET FRAMEWORK
+                </label>
+                <div className="relative">
+                    <select 
+                    value={state.targetLang}
+                    onChange={(e) => setState(prev => ({...prev, targetLang: e.target.value}))}
+                    disabled={state.status !== AgentStatus.IDLE}
+                    className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-3 pr-8 py-2.5 text-sm text-gray-200 focus:border-brand-500 focus:outline-none transition-colors appearance-none"
+                    >
+                    {LANGUAGES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <Zap className="w-4 h-4 text-gray-500" />
+                    </div>
+                </div>
               </div>
 
               <button
                 onClick={state.status === AgentStatus.IDLE ? startMigration : reset}
                 className={`
-                  w-full flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm transition-all duration-300
+                  w-full flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm transition-all duration-300 mt-2
                   ${state.status === AgentStatus.IDLE 
                     ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.2)]' 
                     : 'bg-dark-700 hover:bg-dark-600 text-gray-300'}

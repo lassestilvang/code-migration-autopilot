@@ -5,8 +5,10 @@ import { analyzeRepository, generateArchitectureDiagram, generateProjectStructur
 import AgentLogs from './AgentLogs';
 import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
-import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn } from 'lucide-react';
+import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck } from 'lucide-react';
+import { NextjsIcon, ReactIcon, TypeScriptIcon, JavaScriptIcon, PythonIcon } from './Icons';
 import { v4 as uuidv4 } from 'uuid';
+import JSZip from 'jszip';
 
 const RepoMigration: React.FC = () => {
   const [state, setState] = useState<RepoState>({
@@ -47,7 +49,7 @@ const RepoMigration: React.FC = () => {
       status: AgentStatus.ANALYZING, 
       logs: [], 
       files: [], 
-      generatedFiles: [],
+      generatedFiles: [], 
       analysis: null, 
       diagram: null,
       sourceContext: '',
@@ -192,6 +194,44 @@ const RepoMigration: React.FC = () => {
     addLog("Migration Complete. System Ready.", "success");
   };
 
+  const handleDownload = async () => {
+      if (state.generatedFiles.length === 0) return;
+      
+      const zip = new JSZip();
+      
+      // Recursive function to add files to zip
+      const addNodeToZip = (nodes: FileNode[], folder: JSZip) => {
+          nodes.forEach(node => {
+              if (node.type === 'dir' && node.children) {
+                  const newFolder = folder.folder(node.name);
+                  if (newFolder) addNodeToZip(node.children, newFolder);
+              } else if (node.type === 'file') {
+                  // If content is missing, we add a placeholder
+                  const content = node.content || "// File content generation failed or pending.";
+                  folder.file(node.name, content);
+              }
+          });
+      };
+      
+      addNodeToZip(state.generatedFiles, zip);
+      
+      try {
+          const content = await zip.generateAsync({ type: "blob" });
+          const url = window.URL.createObjectURL(content);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "nextjs-migration-autopilot.zip";
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          addLog("Project downloaded successfully.", "success");
+      } catch (e) {
+          addLog("Failed to zip project files.", "error");
+          console.error(e);
+      }
+  };
+
   const handleFileSelect = async (path: string) => {
     setState(prev => ({ ...prev, selectedFile: path }));
     
@@ -212,8 +252,6 @@ const RepoMigration: React.FC = () => {
   };
 
   // --- Helpers ---
-
-  // Build tree from flat path list for Target view
   const buildTreeFromPaths = (paths: string[]): FileNode[] => {
       const root: FileNode[] = [];
       const map: Record<string, FileNode> = {};
@@ -282,7 +320,7 @@ const RepoMigration: React.FC = () => {
         const targetTree = tree === 'source' ? prev.files : prev.generatedFiles;
         const updateNode = (nodes: FileNode[]): FileNode[] => {
             return nodes.map(node => {
-                if (node.path === path) return { ...node, content }; // For target, content IS the migrated code
+                if (node.path === path) return { ...node, content }; 
                 if (node.children) return { ...node, children: updateNode(node.children) };
                 return node;
             });
@@ -292,7 +330,6 @@ const RepoMigration: React.FC = () => {
     });
   };
 
-  // Get currently selected file data
   const getSelectedFileData = () => {
     if (!state.selectedFile) return null;
     const tree = state.activeTree === 'source' ? state.files : state.generatedFiles;
@@ -301,6 +338,15 @@ const RepoMigration: React.FC = () => {
 
   const selectedNode = getSelectedFileData();
   const isAnalyzed = !!state.analysis;
+  
+  // Helper to resolve icon based on framework name (simplified)
+  const getFrameworkIcon = (name: string) => {
+     const n = name.toLowerCase();
+     if (n.includes('react')) return <ReactIcon className="w-4 h-4 text-blue-400" />;
+     if (n.includes('vue')) return <Code2 className="w-4 h-4 text-green-400" />;
+     if (n.includes('python')) return <PythonIcon className="w-4 h-4 text-blue-300" />;
+     return <Code2 className="w-4 h-4 text-gray-400" />;
+  };
 
   return (
     <>
@@ -346,23 +392,34 @@ const RepoMigration: React.FC = () => {
                     
                     <div className="h-6 w-px bg-dark-600 hidden md:block" />
                     
-                    <button 
-                        onClick={confirmMigration}
-                        disabled={!isAnalyzed || state.status === AgentStatus.CONVERTING}
-                        className={`
-                        flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
-                        ${isAnalyzed 
-                            ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-in fade-in zoom-in-95' 
-                            : 'bg-dark-800 text-gray-600 cursor-not-allowed border border-dark-700'}
-                        `}
-                    >
-                        {state.status === AgentStatus.CONVERTING ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <GitBranch className="w-4 h-4" />
-                        )}
-                        {state.status === AgentStatus.CONVERTING ? 'Building Project...' : 'Build Next.js App'}
-                    </button>
+                    {/* Build / Download Button Logic */}
+                    {state.status === AgentStatus.COMPLETED ? (
+                         <button 
+                            onClick={handleDownload}
+                            className="flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto bg-green-600 hover:bg-green-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-in fade-in zoom-in-95"
+                         >
+                            <Download className="w-4 h-4" />
+                            Download Project
+                         </button>
+                    ) : (
+                        <button 
+                            onClick={confirmMigration}
+                            disabled={!isAnalyzed || state.status === AgentStatus.CONVERTING}
+                            className={`
+                            flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
+                            ${isAnalyzed 
+                                ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-in fade-in zoom-in-95' 
+                                : 'bg-dark-800 text-gray-600 cursor-not-allowed border border-dark-700'}
+                            `}
+                        >
+                            {state.status === AgentStatus.CONVERTING ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <GitBranch className="w-4 h-4" />
+                            )}
+                            {state.status === AgentStatus.CONVERTING ? 'Building Project...' : 'Build Next.js App'}
+                        </button>
+                    )}
 
                     <label className={`
                         flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity
@@ -400,13 +457,31 @@ const RepoMigration: React.FC = () => {
             {/* Row 3: Integrated Analysis & Diagram (Conditional) */}
             {state.analysis && (
                 <div className="mt-2 pt-4 border-t border-dark-700 flex flex-col md:flex-row gap-6 animate-in fade-in slide-in-from-top-2">
-                    {/* Summary Text */}
-                    <div className="flex-1 min-w-0">
-                         <div className="flex items-center gap-2 text-gray-400 text-xs font-mono uppercase tracking-wider mb-2">
-                             <span>Legacy: {state.analysis.detectedFramework}</span>
-                             <ArrowRight className="w-3 h-3" />
-                             <span className="text-brand-400 font-bold">Target: Next.js 14</span>
+                    {/* Summary Text & Badges */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-3">
+                         <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-900 border border-dark-600">
+                                {getFrameworkIcon(state.analysis.detectedFramework)}
+                                <span className="text-gray-300 text-xs font-bold uppercase">{state.analysis.detectedFramework}</span>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-gray-600" />
+                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-900/20 border border-brand-500/30">
+                                <NextjsIcon className="w-4 h-4 text-brand-400" />
+                                <span className="text-brand-100 text-xs font-bold uppercase">Next.js 14</span>
+                            </div>
+                            
+                            {/* Inferred Complexity Badge */}
+                            <div className={`
+                                flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono border uppercase tracking-wide
+                                ${state.analysis.complexity === 'High' ? 'bg-red-900/20 border-red-500/30 text-red-300' : ''}
+                                ${state.analysis.complexity === 'Medium' ? 'bg-yellow-900/20 border-yellow-500/30 text-yellow-300' : ''}
+                                ${state.analysis.complexity === 'Low' ? 'bg-green-900/20 border-green-500/30 text-green-300' : ''}
+                            `}>
+                                <Server className="w-3 h-3" />
+                                {state.analysis.complexity} Complexity
+                            </div>
                          </div>
+
                          <p className="text-sm text-gray-300 leading-relaxed max-w-3xl">
                              {state.analysis.summary}
                          </p>
@@ -479,16 +554,16 @@ const RepoMigration: React.FC = () => {
                         />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
-                            <div className="w-16 h-16 bg-dark-700 rounded-full flex items-center justify-center mb-4 border border-dark-600">
-                                {state.activeTree === 'source' ? <Database className="w-8 h-8 text-gray-400" /> : <Layout className="w-8 h-8 text-brand-400" />}
+                            <div className="w-20 h-20 bg-dark-700/50 rounded-full flex items-center justify-center mb-6 border border-dark-600/50">
+                                {state.activeTree === 'source' ? <Database className="w-10 h-10 text-blue-400/50" /> : <Layout className="w-10 h-10 text-brand-400/50" />}
                             </div>
-                            <h3 className="text-lg font-medium text-gray-300">
+                            <h3 className="text-xl font-medium text-gray-200">
                                 {state.activeTree === 'source' ? 'Legacy Codebase' : 'Modern Next.js Project'}
                             </h3>
-                            <p className="text-sm max-w-md text-center mt-2">
+                            <p className="text-sm max-w-md text-center mt-3 text-gray-400">
                                 {state.activeTree === 'source' 
-                                    ? "Select a file to inspect the original source code." 
-                                    : "Generated Next.js components will appear here."}
+                                    ? "Select a file from the explorer to inspect the original source code structure." 
+                                    : "Generated Next.js components, pages, and utility files will appear here."}
                             </p>
                         </div>
                     )}
