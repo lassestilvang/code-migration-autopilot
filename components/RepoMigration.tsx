@@ -133,6 +133,9 @@ const RepoMigration: React.FC = () => {
         }
       }
 
+      // 4. Return to IDLE state to await user confirmation
+      setState(prev => ({ ...prev, status: AgentStatus.IDLE }));
+
     } catch (e: any) {
       addLog(`Fatal Error: ${e.message}`, "error");
       setState(prev => ({ ...prev, status: AgentStatus.ERROR }));
@@ -406,6 +409,7 @@ const RepoMigration: React.FC = () => {
 
   const selectedNode = getSelectedFileData();
   const isAnalyzed = !!state.analysis;
+  const isWorking = state.status !== AgentStatus.IDLE && state.status !== AgentStatus.COMPLETED && state.status !== AgentStatus.ERROR;
   
   // Helper to resolve icon based on framework name (simplified)
   const getFrameworkIcon = (name: string) => {
@@ -525,12 +529,12 @@ const RepoMigration: React.FC = () => {
                 </div>
 
                 {/* Status Badge */}
-                {(state.status !== AgentStatus.IDLE) && (
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-dark-900 border border-dark-700 text-xs font-mono text-gray-400">
-                        <div className={`w-2 h-2 rounded-full ${state.status === AgentStatus.ERROR ? 'bg-red-500' : 'bg-brand-500 animate-pulse'}`} />
-                        {state.status}
-                    </div>
-                )}
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-dark-950 border border-dark-700 shadow-inner min-w-[130px] justify-center">
+                    <div className={`w-2 h-2 rounded-full ${isWorking ? 'bg-red-500 animate-pulse' : 'bg-gray-600'}`} />
+                    <span className="text-xs font-mono font-medium text-gray-400 uppercase tracking-wider">
+                        {state.status === AgentStatus.IDLE ? 'SYSTEM IDLE' : state.status}
+                    </span>
+                </div>
             </div>
 
             {/* Row 3: Integrated Analysis & Diagram (Conditional) */}

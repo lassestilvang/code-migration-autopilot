@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Terminal, Activity } from 'lucide-react';
+import { Bot, Terminal } from 'lucide-react';
 
 const Header: React.FC = () => {
   return (
@@ -24,10 +24,6 @@ const Header: React.FC = () => {
           <div className="hidden md:flex items-center gap-2 text-sm text-gray-400">
             <Terminal className="w-4 h-4" />
             <span>v2.1.0-beta</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20">
-            <Activity className="w-4 h-4 text-brand-400 animate-pulse-fast" />
-            <span className="text-xs font-semibold text-brand-400 uppercase tracking-wide">System Online</span>
           </div>
         </div>
       </div>
