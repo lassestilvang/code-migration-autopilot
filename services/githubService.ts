@@ -1,3 +1,4 @@
+
 import { FileNode } from '../types';
 
 interface GitHubTreeItem {
@@ -15,6 +16,20 @@ interface GitHubTreeResponse {
   tree: GitHubTreeItem[];
   truncated: boolean;
 }
+
+const getMimeType = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    switch(ext) {
+        case 'png': return 'image/png';
+        case 'jpg': case 'jpeg': return 'image/jpeg';
+        case 'gif': return 'image/gif';
+        case 'svg': return 'image/svg+xml';
+        case 'ico': return 'image/x-icon';
+        case 'webp': return 'image/webp';
+        case 'bmp': return 'image/bmp';
+        default: return 'application/octet-stream';
+    }
+};
 
 export const parseGitHubUrl = (url: string) => {
   try {
@@ -170,6 +185,18 @@ export const fetchFileContent = async (url: string, path: string): Promise<strin
         }
 
         const data = await response.json();
+
+        // Handle Images: Return Data URI or Download URL
+        if (/\.(png|jpg|jpeg|gif|ico|svg|webp|bmp)$/i.test(path)) {
+             if (data.content && data.encoding === 'base64') {
+                  const mimeType = getMimeType(path);
+                  const cleanBase64 = data.content.replace(/\n/g, '');
+                  return `data:${mimeType};base64,${cleanBase64}`;
+             }
+             if (data.download_url) {
+                 return data.download_url;
+             }
+        }
         
         if (data.content && data.encoding === 'base64') {
             // Robust decoding using TextDecoder for unicode support

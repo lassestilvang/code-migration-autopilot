@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { AgentStatus, RepoState, LogEntry, FileNode, RepoAnalysisResult, MigrationReport } from '../types';
 import { fetchRepoStructure, fetchFileContent } from '../services/githubService';
@@ -6,7 +7,7 @@ import AgentLogs from './AgentLogs';
 import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
 import MigrationReportModal from './MigrationReportModal';
-import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck, AlertCircle, ExternalLink } from 'lucide-react';
+import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck, AlertCircle, ExternalLink, FileImage } from 'lucide-react';
 import { NextjsIcon, ReactIcon, TypeScriptIcon, JavaScriptIcon, PythonIcon, VueIcon, PhpIcon } from './Icons';
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
@@ -155,7 +156,7 @@ const RepoMigration: React.FC = () => {
     // 4. Ingest Source Code for Context
     addLog("Ingesting key legacy source files for context...", "info");
     const filesToRead = flattenFiles(state.files)
-      .filter(f => f.type === 'file' && !f.name.endsWith('.md') && !f.name.endsWith('.json') && !f.name.match(/\.(png|jpg|ico|svg)$/))
+      .filter(f => f.type === 'file' && !f.name.endsWith('.md') && !f.name.endsWith('.json') && !f.name.match(/\.(png|jpg|jpeg|gif|ico|svg|webp|bmp)$/i))
       .slice(0, 15); // Limit for demo speed/context size
 
     let context = "";
@@ -410,6 +411,10 @@ const RepoMigration: React.FC = () => {
     if (!state.selectedFile) return null;
     const tree = state.activeTree === 'source' ? state.files : state.generatedFiles;
     return flattenFiles(tree).find(f => f.path === state.selectedFile);
+  };
+
+  const isImageFile = (filename: string) => {
+    return /\.(png|jpg|jpeg|gif|ico|svg|webp|bmp)$/i.test(filename);
   };
 
   const selectedNode = getSelectedFileData();
@@ -699,6 +704,31 @@ const RepoMigration: React.FC = () => {
             <div className="lg:col-span-9 flex flex-col gap-4 h-full min-h-0">
                 <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden relative min-h-0 shadow-lg flex flex-col">
                     {selectedNode && selectedNode.type === 'file' ? (
+                        isImageFile(selectedNode.name) ? (
+                            <div className="flex flex-col h-full">
+                                <div className="bg-dark-900 px-4 py-2 border-b border-dark-700 flex justify-between items-center shrink-0">
+                                     <div className="flex items-center gap-2">
+                                        <FileImage className="w-4 h-4 text-purple-400" />
+                                        <span className="text-sm font-semibold text-gray-300">{selectedNode.name}</span>
+                                    </div>
+                                    <span className="text-xs px-2 py-0.5 rounded bg-dark-700 text-gray-400 font-mono uppercase">IMAGE PREVIEW</span>
+                                </div>
+                                <div className="flex-1 flex items-center justify-center p-8 bg-[url('https://transparenttextures.com/patterns/cubes.png')] bg-dark-900/50">
+                                    {selectedNode.content ? (
+                                        <img 
+                                            src={selectedNode.content} 
+                                            alt={selectedNode.name} 
+                                            className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" 
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-3 text-gray-500 animate-pulse">
+                                            <div className="w-12 h-12 bg-dark-800 rounded-lg"></div>
+                                            <span className="text-xs">Loading preview...</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
                         <CodeEditor 
                             title={state.activeTree === 'source' ? `Legacy / ${selectedNode.name}` : `Next.js / ${selectedNode.name}`}
                             language={state.activeTree === 'source' ? state.sourceLang : 'TypeScript'}
@@ -706,6 +736,7 @@ const RepoMigration: React.FC = () => {
                             readOnly={true}
                             highlight={state.activeTree === 'target' && !!selectedNode.content}
                         />
+                        )
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
                             <div className="w-20 h-20 bg-dark-700/50 rounded-full flex items-center justify-center mb-6 border border-dark-600/50">
