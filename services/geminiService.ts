@@ -153,7 +153,7 @@ export const generateNextJsFile = async (
 
   try {
     const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
             thinkingConfig: { thinkingBudget: 2048 }
@@ -218,7 +218,7 @@ export const convertCode = async (
 
   try {
     const response = await withRetry<GenerateContentResponse>(() => client.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           thinkingConfig: { thinkingBudget: 2048 } 
