@@ -16,6 +16,12 @@ export interface AnalysisResult {
   risks: string[];
 }
 
+export interface RepoAnalysisResult extends AnalysisResult {
+  detectedFramework: string;
+  recommendedTarget: string;
+  architectureDescription: string;
+}
+
 export interface VerificationResult {
   passed: boolean;
   issues: string[];
@@ -41,6 +47,31 @@ export interface MigrationState {
   verification: VerificationResult | null;
 }
 
+export interface FileNode {
+  path: string;
+  name: string;
+  type: 'file' | 'dir';
+  content?: string; // Content
+  status: 'pending' | 'migrating' | 'done' | 'error';
+  children?: FileNode[];
+}
+
+export interface RepoState {
+  url: string;
+  branch: string;
+  status: AgentStatus;
+  files: FileNode[]; // Source files
+  generatedFiles: FileNode[]; // Target (New) files
+  selectedFile: string | null; // Path of currently viewed file
+  activeTree: 'source' | 'target'; // Which tree is visible
+  logs: LogEntry[];
+  analysis: RepoAnalysisResult | null;
+  diagram: string | null; // Base64 image
+  sourceLang: string;
+  targetLang: string;
+  sourceContext: string; // Aggregated content of source files for context
+}
+
 export const LANGUAGES = [
   { id: 'python2', label: 'Python 2' },
   { id: 'python3', label: 'Python 3' },
@@ -55,4 +86,6 @@ export const LANGUAGES = [
   { id: 'go', label: 'Go' },
   { id: 'rust', label: 'Rust' },
   { id: 'java', label: 'Java' },
+  { id: 'astro', label: 'Astro' },
+  { id: 'nextjs', label: 'Next.js' },
 ];

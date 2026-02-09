@@ -33,6 +33,67 @@ Output strict JSON with this structure:
 }
 `;
 
+export const REPO_ANALYSIS_PROMPT_TEMPLATE = `
+You are a Principal Software Architect. You are analyzing a full repository file list and README to plan a migration.
+
+Repository File Structure:
+{fileList}
+
+README Content:
+{readme}
+
+Your task:
+1. Detect the primary source language/framework.
+2. The target is ALWAYS "Next.js (App Router) + TypeScript + Tailwind CSS".
+3. Summarize the application architecture.
+4. Create a prompt description for an architecture diagram representing the OLD legacy system.
+
+Output strict JSON:
+{
+  "summary": "Executive summary of the application",
+  "complexity": "Low" | "Medium" | "High",
+  "dependencies": ["inferred", "dependencies"],
+  "patterns": ["architectural", "patterns"],
+  "risks": ["migration", "risks"],
+  "detectedFramework": "name of source framework",
+  "recommendedTarget": "Next.js + TypeScript",
+  "architectureDescription": "A detailed visual description of the legacy system architecture for a diagram generator."
+}
+`;
+
+export const PROJECT_SCAFFOLD_PROMPT = `
+You are a Lead Architect designing a modern Next.js 14 (App Router) project structure to replace a legacy application.
+
+Legacy Application Context:
+{analysisSummary}
+
+Task:
+Design a clean, production-ready file structure for the new Next.js application.
+Include standard files like \`package.json\`, \`tsconfig.json\`, \`app/layout.tsx\`, \`app/page.tsx\`, and any necessary components or lib utilities based on the likely needs of the legacy app.
+Do not include node_modules or standard git files.
+
+Output strict JSON as a flat array of strings representing file paths:
+["package.json", "app/layout.tsx", "app/page.tsx", "components/ui/Button.tsx", ...]
+`;
+
+export const GENERATION_PROMPT_TEMPLATE = `
+You are an expert Senior Full-Stack Engineer.
+Your task is to generate the code for a specific file in a new Next.js 14 (App Router) project, migrating functionality from a legacy codebase.
+
+Target File Path: {targetFilePath}
+
+Legacy Code Context (Reference):
+{sourceContext}
+
+Instructions:
+1. Generate the full code for \`{targetFilePath}\`.
+2. Use TypeScript, functional components, and Tailwind CSS.
+3. Ensure it implements functionality equivalent to the legacy code where applicable, or sets up necessary boilerplate (e.g., config files).
+4. If the file is \`package.json\`, include dependencies relevant to the project (e.g., lucide-react, clsx, tailwind-merge).
+
+Output ONLY the code content. Do not use markdown blocks.
+`;
+
 export const CONVERSION_PROMPT_TEMPLATE = `
 You are an autonomous coding agent.
 Convert the following {sourceLang} code to modern, clean, production-ready {targetLang}.
