@@ -5,12 +5,12 @@ import { analyzeRepository, generateArchitectureDiagram, generateProjectStructur
 import AgentLogs from './AgentLogs';
 import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
-import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube } from 'lucide-react';
+import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 const RepoMigration: React.FC = () => {
   const [state, setState] = useState<RepoState>({
-    url: 'https://github.com/jquery/jquery-migrate',
+    url: 'https://github.com/lassestilvang/code-migration-autopilot',
     branch: 'main',
     status: AgentStatus.IDLE,
     files: [], // Source
@@ -25,8 +25,8 @@ const RepoMigration: React.FC = () => {
     sourceContext: ''
   });
 
-  const [activeTab, setActiveTab] = useState<'code' | 'diagram'>('code');
   const [includeTests, setIncludeTests] = useState(false);
+  const [isDiagramOpen, setIsDiagramOpen] = useState(false);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     setState(prev => ({
@@ -117,7 +117,6 @@ const RepoMigration: React.FC = () => {
              const diagram = await generateArchitectureDiagram(analysis.architectureDescription);
              if (diagram) {
                  setState(prev => ({ ...prev, diagram }));
-                 setActiveTab('diagram');
                  addLog("Legacy architecture diagram rendered.", "success");
              } else {
                  addLog("Diagram generation failed (Quota/Permission).", "error");
@@ -191,7 +190,6 @@ const RepoMigration: React.FC = () => {
 
     setState(prev => ({ ...prev, status: AgentStatus.COMPLETED }));
     addLog("Migration Complete. System Ready.", "success");
-    setActiveTab('code');
   };
 
   // --- Helpers ---
@@ -286,193 +284,221 @@ const RepoMigration: React.FC = () => {
   const isAnalyzed = !!state.analysis;
 
   return (
-    <div className="flex flex-col gap-6 h-full overflow-hidden">
-      {/* Search Bar / Input Area */}
-      <div className="bg-dark-800 p-4 rounded-xl border border-dark-700 flex flex-col gap-4 shrink-0 shadow-lg">
-        {/* Row 1: Input */}
-        <div className="relative w-full">
-            <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input 
-                type="text" 
-                value={state.url}
-                onChange={(e) => setState(prev => ({...prev, url: e.target.value}))}
-                disabled={state.status !== AgentStatus.IDLE && state.status !== AgentStatus.PLANNING}
-                placeholder="https://github.com/username/repository"
-                className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-10 pr-4 py-3 text-gray-200 focus:border-brand-500 focus:outline-none transition-colors"
-            />
-        </div>
-
-        {/* Row 2: Controls */}
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-             <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
-                 <button 
-                    onClick={startRepoProcess}
+    <>
+        <div className="flex flex-col gap-6 h-full overflow-hidden">
+        {/* Top Control Panel with Integrated Analysis */}
+        <div className="bg-dark-800 p-4 rounded-xl border border-dark-700 flex flex-col gap-4 shrink-0 shadow-lg">
+            {/* Row 1: Input */}
+            <div className="relative w-full">
+                <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                <input 
+                    type="text" 
+                    value={state.url}
+                    onChange={(e) => setState(prev => ({...prev, url: e.target.value}))}
                     disabled={state.status !== AgentStatus.IDLE && state.status !== AgentStatus.PLANNING}
-                    className={`
-                      flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
-                      ${!isAnalyzed 
-                        ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]' 
-                        : 'bg-dark-700 hover:bg-dark-600 text-gray-300 border border-dark-600'}
-                      ${state.status === AgentStatus.ANALYZING ? 'opacity-70 cursor-wait' : ''}
-                    `}
-                 >
-                    {state.status === AgentStatus.ANALYZING ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : isAnalyzed ? (
-                        <RotateCw className="w-4 h-4" />
-                    ) : (
-                        <Play className="w-4 h-4 fill-current" />
-                    )}
-                    {state.status === AgentStatus.ANALYZING ? 'Scanning...' : isAnalyzed ? 'Re-analyze Repo' : 'Analyze Repo'}
-                 </button>
-                 
-                 <div className="h-6 w-px bg-dark-600 hidden md:block" />
-                 
-                 <button 
-                    onClick={confirmMigration}
-                    disabled={!isAnalyzed || state.status === AgentStatus.CONVERTING}
-                    className={`
-                      flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
-                      ${isAnalyzed 
-                        ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-in fade-in zoom-in-95' 
-                        : 'bg-dark-800 text-gray-600 cursor-not-allowed border border-dark-700'}
-                    `}
-                 >
-                    {state.status === AgentStatus.CONVERTING ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <GitBranch className="w-4 h-4" />
-                    )}
-                    {state.status === AgentStatus.CONVERTING ? 'Building Project...' : 'Build Next.js App'}
-                 </button>
-
-                 <label className={`
-                    flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity
-                    ${isAnalyzed ? 'opacity-100' : 'opacity-50 pointer-events-none'}
-                 `}>
-                    <div className={`
-                        w-5 h-5 rounded border flex items-center justify-center transition-colors
-                        ${includeTests ? 'bg-brand-600 border-brand-500' : 'bg-dark-900 border-dark-600'}
-                    `}>
-                        {includeTests && <Check className="w-3.5 h-3.5 text-white" />}
-                    </div>
-                    <input 
-                        type="checkbox" 
-                        checked={includeTests} 
-                        onChange={e => setIncludeTests(e.target.checked)}
-                        disabled={!isAnalyzed}
-                        className="hidden"
-                    />
-                    <span className="text-gray-300 flex items-center gap-1.5">
-                        <TestTube className="w-3.5 h-3.5" />
-                        Generate Tests
-                    </span>
-                 </label>
-             </div>
-
-             {/* Status Badge */}
-             {(state.status !== AgentStatus.IDLE) && (
-                <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-dark-900 border border-dark-700 text-xs font-mono text-gray-400">
-                    <div className={`w-2 h-2 rounded-full ${state.status === AgentStatus.ERROR ? 'bg-red-500' : 'bg-brand-500 animate-pulse'}`} />
-                    {state.status}
-                </div>
-             )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-        {/* Left Sidebar: File Tree */}
-        <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-0">
-            <div className="flex-[3] min-h-0 overflow-hidden rounded-xl border border-dark-700 shadow-sm">
-                 <FileExplorer 
-                    files={state.activeTree === 'source' ? state.files : state.generatedFiles} 
-                    selectedFile={state.selectedFile} 
-                    activeTree={state.activeTree}
-                    onToggleTree={(mode) => setState(prev => ({ ...prev, activeTree: mode }))}
-                    onSelectFile={(path) => setState(prev => ({...prev, selectedFile: path}))}
+                    placeholder="https://github.com/username/repository"
+                    className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-10 pr-4 py-3 text-gray-200 focus:border-brand-500 focus:outline-none transition-colors"
                 />
             </div>
-            <div className="flex-[2] min-h-0 overflow-hidden">
-                 <AgentLogs logs={state.logs} />
-            </div>
-        </div>
 
-        {/* Main Content Area */}
-        <div className="lg:col-span-9 flex flex-col gap-4 h-full min-h-0">
-            
-            {/* Context Header: Analysis Summary */}
-            {state.analysis && (
-                <div className="bg-dark-800 rounded-xl border border-dark-700 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 shadow-sm animate-in fade-in slide-in-from-top-2">
-                    <div>
-                        <div className="flex items-center gap-2 text-gray-400 text-xs font-mono uppercase tracking-wider mb-1">
-                            <span>Legacy: {state.analysis.detectedFramework}</span>
-                            <ArrowRight className="w-3 h-3" />
-                            <span className="text-brand-400 font-bold">Target: Next.js 14 (App Router)</span>
-                        </div>
-                        <p className="text-sm text-gray-200 max-w-2xl truncate">{state.analysis.summary}</p>
-                    </div>
+            {/* Row 2: Controls */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                    <button 
+                        onClick={startRepoProcess}
+                        disabled={state.status !== AgentStatus.IDLE && state.status !== AgentStatus.PLANNING}
+                        className={`
+                        flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
+                        ${!isAnalyzed 
+                            ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)]' 
+                            : 'bg-dark-700 hover:bg-dark-600 text-gray-300 border border-dark-600'}
+                        ${state.status === AgentStatus.ANALYZING ? 'opacity-70 cursor-wait' : ''}
+                        `}
+                    >
+                        {state.status === AgentStatus.ANALYZING ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : isAnalyzed ? (
+                            <RotateCw className="w-4 h-4" />
+                        ) : (
+                            <Play className="w-4 h-4 fill-current" />
+                        )}
+                        {state.status === AgentStatus.ANALYZING ? 'Scanning...' : isAnalyzed ? 'Re-analyze Repo' : 'Analyze Repo'}
+                    </button>
                     
-                    <div className="flex bg-dark-900 rounded-lg p-1 border border-dark-700 shrink-0">
-                        <button 
-                            onClick={() => setActiveTab('code')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-2 ${activeTab === 'code' ? 'bg-dark-700 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            <LayoutTemplate className="w-3 h-3" /> Workspace
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('diagram')}
-                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-2 ${activeTab === 'diagram' ? 'bg-dark-700 text-white' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            <Layers className="w-3 h-3" /> Legacy Arch
-                        </button>
-                    </div>
-                </div>
-            )}
+                    <div className="h-6 w-px bg-dark-600 hidden md:block" />
+                    
+                    <button 
+                        onClick={confirmMigration}
+                        disabled={!isAnalyzed || state.status === AgentStatus.CONVERTING}
+                        className={`
+                        flex items-center justify-center gap-2 py-2 px-6 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
+                        ${isAnalyzed 
+                            ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-[0_0_15px_rgba(34,197,94,0.3)] animate-in fade-in zoom-in-95' 
+                            : 'bg-dark-800 text-gray-600 cursor-not-allowed border border-dark-700'}
+                        `}
+                    >
+                        {state.status === AgentStatus.CONVERTING ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <GitBranch className="w-4 h-4" />
+                        )}
+                        {state.status === AgentStatus.CONVERTING ? 'Building Project...' : 'Build Next.js App'}
+                    </button>
 
-            {/* Viewer */}
-            <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden relative min-h-0 shadow-lg">
-                {activeTab === 'diagram' ? (
-                    <div className="absolute inset-0 p-4 flex items-center justify-center bg-dark-900">
-                        {state.diagram ? (
-                            <img src={state.diagram} alt="Architecture Diagram" className="max-w-full max-h-full rounded shadow-2xl border border-dark-600" />
-                        ) : (
-                            <div className="text-center text-gray-500">
-                                <Layers className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                <p>No diagram generated yet.</p>
-                            </div>
-                        )}
-                    </div>
-                ) : (
-                    <div className="absolute inset-0 flex flex-col">
-                        {selectedNode && selectedNode.type === 'file' ? (
-                            <CodeEditor 
-                                title={state.activeTree === 'source' ? `Legacy / ${selectedNode.name}` : `Next.js / ${selectedNode.name}`}
-                                language={state.activeTree === 'source' ? state.sourceLang : 'TypeScript'}
-                                code={selectedNode.content || (state.activeTree === 'target' ? "// Generating..." : "// Loading...")}
-                                readOnly={true}
-                                highlight={state.activeTree === 'target' && !!selectedNode.content}
-                            />
-                        ) : (
-                             <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
-                                <div className="w-16 h-16 bg-dark-700 rounded-full flex items-center justify-center mb-4">
-                                    {state.activeTree === 'source' ? <Database className="w-8 h-8 text-gray-400" /> : <Layout className="w-8 h-8 text-brand-400" />}
-                                </div>
-                                <h3 className="text-lg font-medium text-gray-300">
-                                    {state.activeTree === 'source' ? 'Legacy Codebase' : 'Modern Next.js Project'}
-                                </h3>
-                                <p className="text-sm max-w-md text-center mt-2">
-                                    {state.activeTree === 'source' 
-                                        ? "Explore the original file structure here. Use the buttons above to analyze and migrate." 
-                                        : "Generated files for the new Next.js architecture will appear here."}
-                                </p>
-                             </div>
-                        )}
+                    <label className={`
+                        flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity
+                        ${isAnalyzed ? 'opacity-100' : 'opacity-50 pointer-events-none'}
+                    `}>
+                        <div className={`
+                            w-5 h-5 rounded border flex items-center justify-center transition-colors
+                            ${includeTests ? 'bg-brand-600 border-brand-500' : 'bg-dark-900 border-dark-600'}
+                        `}>
+                            {includeTests && <Check className="w-3.5 h-3.5 text-white" />}
+                        </div>
+                        <input 
+                            type="checkbox" 
+                            checked={includeTests} 
+                            onChange={e => setIncludeTests(e.target.checked)}
+                            disabled={!isAnalyzed}
+                            className="hidden"
+                        />
+                        <span className="text-gray-300 flex items-center gap-1.5">
+                            <TestTube className="w-3.5 h-3.5" />
+                            Generate Tests
+                        </span>
+                    </label>
+                </div>
+
+                {/* Status Badge */}
+                {(state.status !== AgentStatus.IDLE) && (
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-dark-900 border border-dark-700 text-xs font-mono text-gray-400">
+                        <div className={`w-2 h-2 rounded-full ${state.status === AgentStatus.ERROR ? 'bg-red-500' : 'bg-brand-500 animate-pulse'}`} />
+                        {state.status}
                     </div>
                 )}
             </div>
+
+            {/* Row 3: Integrated Analysis & Diagram (Conditional) */}
+            {state.analysis && (
+                <div className="mt-2 pt-4 border-t border-dark-700 flex flex-col md:flex-row gap-6 animate-in fade-in slide-in-from-top-2">
+                    {/* Summary Text */}
+                    <div className="flex-1 min-w-0">
+                         <div className="flex items-center gap-2 text-gray-400 text-xs font-mono uppercase tracking-wider mb-2">
+                             <span>Legacy: {state.analysis.detectedFramework}</span>
+                             <ArrowRight className="w-3 h-3" />
+                             <span className="text-brand-400 font-bold">Target: Next.js 14</span>
+                         </div>
+                         <p className="text-sm text-gray-300 leading-relaxed max-w-3xl">
+                             {state.analysis.summary}
+                         </p>
+                    </div>
+
+                    {/* Diagram Thumbnail */}
+                    <div className="shrink-0 relative">
+                        {state.diagram ? (
+                            <div 
+                                onClick={() => setIsDiagramOpen(true)}
+                                className="group relative w-48 h-28 bg-dark-900 rounded-lg border border-dark-600 overflow-hidden cursor-pointer hover:border-brand-500/50 transition-all shadow-md"
+                            >
+                                <img src={state.diagram} alt="Architecture" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px]">
+                                    <div className="bg-dark-800/80 p-1.5 rounded-full border border-dark-500 text-white">
+                                        <Maximize2 className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/60 rounded text-[10px] text-white font-mono pointer-events-none">
+                                    LEGACY ARCH
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="w-48 h-28 bg-dark-900 rounded-lg border border-dark-600 border-dashed flex flex-col items-center justify-center text-gray-500 gap-2">
+                                {state.status === AgentStatus.ANALYZING || state.status === AgentStatus.PLANNING ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin text-brand-500" />
+                                        <span className="text-xs">Generating Diagram...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Layers className="w-6 h-6 opacity-30" />
+                                        <span className="text-[10px] uppercase tracking-wider opacity-50">No Diagram</span>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
-    </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+            {/* Left Sidebar: File Tree */}
+            <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-0">
+                <div className="flex-[3] min-h-0 overflow-hidden rounded-xl border border-dark-700 shadow-sm">
+                    <FileExplorer 
+                        files={state.activeTree === 'source' ? state.files : state.generatedFiles} 
+                        selectedFile={state.selectedFile} 
+                        activeTree={state.activeTree}
+                        onToggleTree={(mode) => setState(prev => ({ ...prev, activeTree: mode }))}
+                        onSelectFile={(path) => setState(prev => ({...prev, selectedFile: path}))}
+                    />
+                </div>
+                <div className="flex-[2] min-h-0 overflow-hidden">
+                    <AgentLogs logs={state.logs} />
+                </div>
+            </div>
+
+            {/* Main Content Area: Code Viewer */}
+            <div className="lg:col-span-9 flex flex-col gap-4 h-full min-h-0">
+                <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden relative min-h-0 shadow-lg flex flex-col">
+                    {selectedNode && selectedNode.type === 'file' ? (
+                        <CodeEditor 
+                            title={state.activeTree === 'source' ? `Legacy / ${selectedNode.name}` : `Next.js / ${selectedNode.name}`}
+                            language={state.activeTree === 'source' ? state.sourceLang : 'TypeScript'}
+                            code={selectedNode.content || (state.activeTree === 'target' ? "// Generating..." : "// Loading...")}
+                            readOnly={true}
+                            highlight={state.activeTree === 'target' && !!selectedNode.content}
+                        />
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-gray-500 p-8">
+                            <div className="w-16 h-16 bg-dark-700 rounded-full flex items-center justify-center mb-4 border border-dark-600">
+                                {state.activeTree === 'source' ? <Database className="w-8 h-8 text-gray-400" /> : <Layout className="w-8 h-8 text-brand-400" />}
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-300">
+                                {state.activeTree === 'source' ? 'Legacy Codebase' : 'Modern Next.js Project'}
+                            </h3>
+                            <p className="text-sm max-w-md text-center mt-2">
+                                {state.activeTree === 'source' 
+                                    ? "Select a file to inspect the original source code." 
+                                    : "Generated Next.js components will appear here."}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+        </div>
+
+        {/* Fullscreen Diagram Modal */}
+        {isDiagramOpen && state.diagram && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm animate-in fade-in duration-200 p-4 sm:p-8">
+                <div className="absolute top-4 right-4 z-50">
+                    <button 
+                        onClick={() => setIsDiagramOpen(false)}
+                        className="p-2 rounded-full bg-dark-800 text-white hover:bg-dark-700 border border-dark-600 transition-colors"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+                
+                <div className="relative w-full max-w-7xl max-h-full flex items-center justify-center overflow-auto rounded-lg shadow-2xl bg-dark-900 border border-dark-700">
+                    <img src={state.diagram} alt="Architecture Diagram" className="max-w-full max-h-full object-contain" />
+                    <div className="absolute bottom-4 left-4 bg-dark-800/90 px-3 py-1.5 rounded border border-dark-600 text-white text-xs font-mono">
+                        LEGACY SYSTEM ARCHITECTURE
+                    </div>
+                </div>
+            </div>
+        )}
+    </>
   );
 };
 
