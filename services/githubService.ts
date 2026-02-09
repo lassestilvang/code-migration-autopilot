@@ -18,7 +18,18 @@ interface GitHubTreeResponse {
 
 export const parseGitHubUrl = (url: string) => {
   try {
-    const urlObj = new URL(url);
+    // Handle missing protocol
+    let fullUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        fullUrl = 'https://' + url;
+    }
+
+    const urlObj = new URL(fullUrl);
+    // Support github.com/owner/repo
+    if (urlObj.hostname !== 'github.com' && urlObj.hostname !== 'www.github.com') {
+        return null; 
+    }
+
     const parts = urlObj.pathname.split('/').filter(Boolean);
     if (parts.length < 2) return null;
     return {
@@ -93,19 +104,24 @@ const buildFileTree = (items: GitHubTreeItem[]): FileNode[] => {
 
 export const fetchRepoStructure = async (url: string): Promise<FileNode[]> => {
   const repoInfo = parseGitHubUrl(url);
-  if (!repoInfo) throw new Error("Invalid GitHub URL");
+  if (!repoInfo) throw new Error("Invalid GitHub URL. Format should be: https://github.com/owner/repo");
 
-  // 1. Get the default branch (optional, but good practice. We'll skip and try 'main' then 'master' if failed, or just 'main' for demo)
-  // For robustness, we try to fetch the repo details first to get default_branch
+  // 1. Get the default branch
   let branch = 'main';
   try {
       const repoDetailsRes = await fetch(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}`);
+      
       if (repoDetailsRes.ok) {
           const details = await repoDetailsRes.json();
           branch = details.default_branch || 'main';
+      } else if (repoDetailsRes.status === 404) {
+          throw new Error("Repository not found (404). Check if private or URL is incorrect.");
+      } else if (repoDetailsRes.status === 403 || repoDetailsRes.status === 429) {
+          throw new Error("GitHub API rate limit exceeded.");
       }
-  } catch (e) {
-      console.warn("Could not fetch repo details, assuming main");
+  } catch (e: any) {
+      if (e.message.includes("rate limit") || e.message.includes("not found")) throw e;
+      console.warn("Could not fetch repo details, assuming 'main' branch.", e);
   }
 
   // 2. Fetch Recursive Tree
@@ -113,18 +129,23 @@ export const fetchRepoStructure = async (url: string): Promise<FileNode[]> => {
   
   try {
     const response = await fetch(apiUrl);
+    
     if (!response.ok) {
         if (response.status === 403 || response.status === 429) {
-            throw new Error("GitHub API rate limit exceeded.");
+            throw new Error("GitHub API rate limit exceeded. Please try again later or use a different IP.");
         }
-        throw new Error(`Failed to fetch repo tree: ${response.statusText}`);
+        if (response.status === 404) {
+             throw new Error(`Repository structure not found (404) for branch '${branch}'.`);
+        }
+        const statusText = response.statusText ? ` ${response.statusText}` : '';
+        throw new Error(`Failed to fetch repo tree: ${response.status}${statusText}`);
     }
     
     const data: GitHubTreeResponse = await response.json();
     return buildFileTree(data.tree);
 
   } catch (error) {
-    console.error("GitHub fetch error:", error);
+    // Error is handled by caller
     throw error;
   }
 };
@@ -133,24 +154,47 @@ export const fetchFileContent = async (url: string, path: string): Promise<strin
     const repoInfo = parseGitHubUrl(url);
     if (!repoInfo) throw new Error("Invalid URL");
     
-    // We try to get the raw content. 
-    // Ideally we should use the blob SHA from the tree we fetched earlier to be consistent,
-    // but the UI doesn't pass the SHA, just the path.
-    // So we use the Contents API or raw domain.
-    
     const apiUrl = `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo}/contents/${path}`;
-    const response = await fetch(apiUrl);
-    const data = await response.json();
     
-    if (data.content && data.encoding === 'base64') {
-        // Decode base64, handling newlines and unicode if possible
-        try {
-            return decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-        } catch (e) {
-            return atob(data.content.replace(/\n/g, ''));
+    try {
+        const response = await fetch(apiUrl);
+        
+        if (!response.ok) {
+            if (response.status === 403 || response.status === 429) {
+                throw new Error("GitHub API rate limit exceeded.");
+            }
+            if (response.status === 404) {
+                throw new Error(`File not found: ${path}`);
+            }
+            throw new Error(`Failed to fetch file: ${response.status}`);
         }
+
+        const data = await response.json();
+        
+        if (data.content && data.encoding === 'base64') {
+            // Robust decoding using TextDecoder for unicode support
+            try {
+                const binaryString = atob(data.content.replace(/\n/g, ''));
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                return new TextDecoder('utf-8').decode(bytes);
+            } catch (e) {
+                // Legacy fallback
+                try {
+                    return decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+                } catch (e2) {
+                     return atob(data.content.replace(/\n/g, ''));
+                }
+            }
+        }
+        
+        throw new Error("Could not decode file content or format not supported.");
+    } catch (e) {
+        // Error is handled by caller
+        throw e;
     }
-    throw new Error("Could not decode file content");
 };
 
 // Mock data with nested structure

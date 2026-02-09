@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AgentStatus, RepoState, LogEntry, FileNode, RepoAnalysisResult, MigrationReport } from '../types';
-import { fetchRepoStructure, fetchFileContent, getMockRepo, getMockReadme } from '../services/githubService';
+import { fetchRepoStructure, fetchFileContent } from '../services/githubService';
 import { analyzeRepository, generateArchitectureDiagram, generateProjectStructure, generateNextJsFile } from '../services/geminiService';
 import AgentLogs from './AgentLogs';
 import FileExplorer from './FileExplorer';
 import CodeEditor from './CodeEditor';
 import MigrationReportModal from './MigrationReportModal';
-import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck } from 'lucide-react';
+import { Github, Play, LayoutTemplate, Layers, ArrowRight, Loader2, GitBranch, Database, Check, Layout, RotateCw, TestTube, Maximize2, X, ZoomIn, Zap, Box, Code2, Server, Download, PackageCheck, AlertCircle } from 'lucide-react';
 import { NextjsIcon, ReactIcon, TypeScriptIcon, JavaScriptIcon, PythonIcon } from './Icons';
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
@@ -54,7 +54,7 @@ const RepoMigration: React.FC = () => {
       files: [], 
       generatedFiles: [], 
       analysis: null, 
-      diagram: null,
+      diagram: null, 
       sourceContext: '',
       activeTree: 'source',
       report: null,
@@ -64,24 +64,24 @@ const RepoMigration: React.FC = () => {
     
     try {
       // 1. Fetch Files (Structure)
-      let files: FileNode[] = [];
-      try {
-        files = await fetchRepoStructure(state.url);
-      } catch (e) {
-        addLog("GitHub API unavailable or rate limited. Engaging Simulation Protocol.", "warning");
-        files = getMockRepo();
-        await new Promise(r => setTimeout(r, 1000)); // Fake network delay
-      }
+      const files = await fetchRepoStructure(state.url);
+      
       setState(prev => ({ ...prev, files }));
       addLog(`File index built: ${flattenFiles(files).length} nodes detected.`, "success");
 
       // 2. Analyze (Readme + List)
       addLog("Reading README and package configuration...", "info");
       let readme = "No README found.";
+
       try {
         readme = await fetchFileContent(state.url, 'README.md');
       } catch {
-        readme = getMockReadme();
+        try {
+           readme = await fetchFileContent(state.url, 'readme.md');
+        } catch {
+           addLog("README.md not found, proceeding with file structure analysis only.", "warning");
+           readme = "No README found in repository.";
+        }
       }
       
       addLog("Engaging Deep Static Analysis (Gemini 3 Pro)...", "info");
@@ -166,10 +166,10 @@ const RepoMigration: React.FC = () => {
     addLog(`Context loaded: ${context.length} chars.`, "success");
 
     // 5. Generate New Project Structure
-    addLog(`Designing Next.js 14 App Router project structure${includeTests ? ' with tests' : ''}...`, "info");
+    addLog(`Designing Next.js 16.1 App Router project structure${includeTests ? ' with tests' : ''}...`, "info");
     const newFilePaths = await generateProjectStructure(state.analysis.summary, includeTests);
     
-    const newFileNodes: FileNode[] = buildTreeFromPaths(newFilePaths);
+    const newFileNodes = buildTreeFromPaths(newFilePaths);
     setState(prev => ({ 
         ...prev, 
         generatedFiles: newFileNodes,
@@ -241,7 +241,7 @@ const RepoMigration: React.FC = () => {
       const modernizationScore = Math.min(Math.round(score), 100);
 
       const techStackChanges = [
-          { from: analysis.detectedFramework, to: 'Next.js 14 (App Router)' },
+          { from: analysis.detectedFramework, to: 'Next.js 16.1 (App Router)' },
           { from: 'CSS / SCSS', to: 'Tailwind CSS' },
           { from: 'JavaScript', to: 'TypeScript 5' }
       ];
@@ -315,7 +315,7 @@ const RepoMigration: React.FC = () => {
                  const content = await fetchFileContent(state.url, path);
                  updateFileContent(path, content, 'source');
              } catch (e) {
-                 console.error("Error fetching file content:", e);
+                 // console.error("Error fetching file content:", e); // Reduced logging
                  updateFileContent(path, `// Error loading content for ${path}\n// ${(e as Error).message}`, 'source');
              }
         }
@@ -410,6 +410,7 @@ const RepoMigration: React.FC = () => {
   const selectedNode = getSelectedFileData();
   const isAnalyzed = !!state.analysis;
   const isWorking = state.status !== AgentStatus.IDLE && state.status !== AgentStatus.COMPLETED && state.status !== AgentStatus.ERROR;
+  const isBusy = state.status === AgentStatus.ANALYZING || state.status === AgentStatus.CONVERTING;
   
   // Helper to resolve icon based on framework name (simplified)
   const getFrameworkIcon = (name: string) => {
@@ -426,16 +427,29 @@ const RepoMigration: React.FC = () => {
         {/* Top Control Panel with Integrated Analysis */}
         <div className="bg-dark-800 p-4 rounded-xl border border-dark-700 flex flex-col gap-4 shrink-0 shadow-lg">
             {/* Row 1: Input */}
-            <div className="relative w-full">
-                <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-                <input 
-                    type="text" 
-                    value={state.url}
-                    onChange={(e) => setState(prev => ({...prev, url: e.target.value}))}
-                    disabled={state.status !== AgentStatus.IDLE && state.status !== AgentStatus.PLANNING}
-                    placeholder="https://github.com/username/repository"
-                    className="w-full bg-dark-900 border border-dark-600 rounded-lg pl-10 pr-4 py-3 text-gray-200 focus:border-brand-500 focus:outline-none transition-colors"
-                />
+            <div className="flex flex-col gap-2 w-full">
+                <div className="relative w-full">
+                    <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
+                    <input 
+                        type="text" 
+                        value={state.url}
+                        onChange={(e) => setState(prev => ({...prev, url: e.target.value}))}
+                        disabled={isBusy}
+                        placeholder="https://github.com/username/repository"
+                        className={`
+                            w-full bg-dark-900 border rounded-lg pl-10 pr-4 py-3 text-gray-200 focus:outline-none transition-colors
+                            ${state.status === AgentStatus.ERROR ? 'border-red-500/50 focus:border-red-500' : 'border-dark-600 focus:border-brand-500'}
+                        `}
+                    />
+                </div>
+                {state.status === AgentStatus.ERROR && (
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-red-900/20 border border-red-500/30 text-red-200 text-sm animate-in fade-in slide-in-from-top-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+                        <span>
+                            Analysis failed. Please check the URL, repository privacy settings, or GitHub API limits and try again.
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Row 2: Controls */}
@@ -443,7 +457,7 @@ const RepoMigration: React.FC = () => {
                 <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
                     <button 
                         onClick={startRepoProcess}
-                        disabled={state.status !== AgentStatus.IDLE && state.status !== AgentStatus.PLANNING}
+                        disabled={isBusy}
                         className={`
                         flex items-center justify-center gap-2 py-2 px-4 rounded-lg font-bold text-sm transition-all whitespace-nowrap w-full md:w-auto
                         ${!isAnalyzed 
@@ -454,12 +468,14 @@ const RepoMigration: React.FC = () => {
                     >
                         {state.status === AgentStatus.ANALYZING ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : state.status === AgentStatus.ERROR ? (
+                            <RotateCw className="w-4 h-4" />
                         ) : isAnalyzed ? (
                             <RotateCw className="w-4 h-4" />
                         ) : (
                             <Play className="w-4 h-4 fill-current" />
                         )}
-                        {state.status === AgentStatus.ANALYZING ? 'Scanning...' : isAnalyzed ? 'Re-analyze Repo' : 'Analyze Repo'}
+                        {state.status === AgentStatus.ANALYZING ? 'Scanning...' : state.status === AgentStatus.ERROR ? 'Retry' : isAnalyzed ? 'Re-analyze Repo' : 'Analyze Repo'}
                     </button>
                     
                     <div className="h-6 w-px bg-dark-600 hidden md:block" />
@@ -550,7 +566,7 @@ const RepoMigration: React.FC = () => {
                             <ArrowRight className="w-4 h-4 text-gray-600" />
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-900/20 border border-brand-500/30">
                                 <NextjsIcon className="w-4 h-4 text-brand-400" />
-                                <span className="text-brand-100 text-xs font-bold uppercase">Next.js 14</span>
+                                <span className="text-brand-100 text-xs font-bold uppercase">Next.js 16.1</span>
                             </div>
                             
                             {/* Inferred Complexity Badge */}
