@@ -33,7 +33,7 @@ const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
                 The <strong className="text-white">Code Migration Autopilot</strong> is an autonomous agent designed to solve one of software engineering's most tedious challenges: <span className="text-brand-400">Legacy Modernization</span>.
               </p>
               <p>
-                Powered by Google's <strong className="text-white">Gemini 2.0 Pro</strong>, it doesn't just translate syntax line-by-line. It understands the <em>intent</em> of your legacy code (whether it's jQuery, Python 2, or old PHP) and re-architects it into production-ready modern frameworks like <strong>Next.js 16.1, React, and TypeScript</strong>.
+                Powered by Google's <strong className="text-white">Gemini 3</strong>, it doesn't just translate syntax line-by-line. It understands the <em>intent</em> of your legacy code (whether it's jQuery, Python 2, or old PHP) and re-architects it into production-ready modern frameworks like <strong>Next.js 16.1, React, and TypeScript</strong>.
               </p>
               <div className="grid grid-cols-2 gap-4 mt-6">
                  <div className="bg-dark-800 p-4 rounded-xl border border-dark-700">
@@ -56,50 +56,51 @@ const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
         )}
 
         {type === 'how-it-works' && (
-          <div className="p-8">
+          <div className="p-8 overflow-y-auto custom-scrollbar">
              <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 border border-blue-500/20">
               <Workflow className="w-8 h-8 text-blue-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-6">How it Works</h2>
+            <h2 className="text-2xl font-bold text-white mb-8">How it Works</h2>
             
-            <div className="relative space-y-8 pl-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-dark-700">
+            {/* Timeline Container */}
+            <div className="relative space-y-12 pl-16 before:absolute before:left-7 before:top-3 before:bottom-3 before:w-0.5 before:bg-dark-700 before:-translate-x-1/2">
                 
                 <div className="relative">
-                    <div className="absolute -left-[39px] w-6 h-6 rounded-full bg-dark-900 border-2 border-brand-500 flex items-center justify-center z-10">
+                    <div className="absolute -left-12 top-0.5 w-6 h-6 rounded-full bg-dark-900 border-2 border-brand-500 flex items-center justify-center z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
                         <span className="w-2 h-2 rounded-full bg-brand-500"></span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-1">1. Deep Analysis</h3>
-                    <p className="text-sm text-gray-400">
+                    <h3 className="text-lg font-bold text-white mb-2">1. Deep Analysis</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
                         The agent scans your repository file tree and reads key files (README, package.json) to construct a mental model of the software architecture.
                     </p>
                 </div>
 
                 <div className="relative">
-                    <div className="absolute -left-[39px] w-6 h-6 rounded-full bg-dark-900 border-2 border-blue-500 flex items-center justify-center z-10">
+                    <div className="absolute -left-12 top-0.5 w-6 h-6 rounded-full bg-dark-900 border-2 border-blue-500 flex items-center justify-center z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
                         <span className="w-2 h-2 rounded-full bg-blue-500"></span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-1">2. Strategic Planning</h3>
-                    <p className="text-sm text-gray-400">
+                    <h3 className="text-lg font-bold text-white mb-2">2. Strategic Planning</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
                         It designs a new project structure (e.g., Next.js App Router) optimized for the target framework, generating a blueprint for the migration.
                     </p>
                 </div>
 
                 <div className="relative">
-                    <div className="absolute -left-[39px] w-6 h-6 rounded-full bg-dark-900 border-2 border-purple-500 flex items-center justify-center z-10">
+                    <div className="absolute -left-12 top-0.5 w-6 h-6 rounded-full bg-dark-900 border-2 border-purple-500 flex items-center justify-center z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
                          <span className="w-2 h-2 rounded-full bg-purple-500"></span>
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-1">3. Autonomous Refactoring</h3>
-                    <p className="text-sm text-gray-400">
+                    <h3 className="text-lg font-bold text-white mb-2">3. Autonomous Refactoring</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
                         Files are processed individually but with shared context. The agent rewrites logic to use modern paradigms (e.g., Hooks, Server Components).
                     </p>
                 </div>
 
                  <div className="relative">
-                    <div className="absolute -left-[39px] w-6 h-6 rounded-full bg-dark-900 border-2 border-green-500 flex items-center justify-center z-10">
+                    <div className="absolute -left-12 top-0.5 w-6 h-6 rounded-full bg-dark-900 border-2 border-green-500 flex items-center justify-center z-10 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-1">4. Verification & Reporting</h3>
-                    <p className="text-sm text-gray-400">
+                    <h3 className="text-lg font-bold text-white mb-2">4. Verification & Reporting</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">
                         A final report assesses the quality of the migration, providing a Modernization Score and allowing you to download the result.
                     </p>
                 </div>
@@ -107,10 +108,10 @@ const InfoModal: React.FC<InfoModalProps> = ({ type, onClose }) => {
           </div>
         )}
 
-        <div className="p-6 bg-dark-800/50 border-t border-dark-700 mt-auto">
+        <div className="p-6 bg-dark-800/50 border-t border-dark-700 mt-auto shrink-0">
             <button 
                 onClick={onClose}
-                className="w-full py-3 bg-dark-700 hover:bg-dark-600 text-white rounded-xl font-bold transition-colors"
+                className="w-full py-3 bg-dark-700 hover:bg-dark-600 text-white rounded-xl font-bold transition-colors border border-dark-600 shadow-lg"
             >
                 Got it
             </button>
