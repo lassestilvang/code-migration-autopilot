@@ -22,7 +22,7 @@ const App: React.FC = () => {
                 </h2>
                 <p className="text-gray-400 text-xs flex items-center gap-1.5 mt-1">
                   <Sparkles className="w-3 h-3 text-brand-400" />
-                  Autonomous refactoring from legacy frameworks to modern architecture.
+                  Autonomous refactoring from legacy frameworks to modern architecture that Coding LLMs love.
                 </p>
             </div>
 

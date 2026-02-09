@@ -683,26 +683,26 @@ const RepoMigration: React.FC = () => {
             )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-            {/* Left Sidebar: File Tree */}
-            <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-0">
-                <div className="flex-[3] min-h-0 overflow-hidden rounded-xl border border-dark-700 shadow-sm">
-                    <FileExplorer 
-                        files={state.activeTree === 'source' ? state.files : state.generatedFiles} 
-                        selectedFile={state.selectedFile} 
-                        activeTree={state.activeTree}
-                        onToggleTree={(mode) => setState(prev => ({ ...prev, activeTree: mode }))}
-                        onSelectFile={handleFileSelect}
-                    />
-                </div>
-                <div className="flex-[2] min-h-0 overflow-hidden">
-                    <AgentLogs logs={state.logs} />
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 min-h-0">
+            {/* Column 1: Agent Logs (Left on Desktop, Bottom on Mobile) */}
+            <div className="lg:col-span-4 flex flex-col h-full min-h-0 order-3 lg:order-1">
+                <AgentLogs logs={state.logs} />
             </div>
 
-            {/* Main Content Area: Code Viewer */}
-            <div className="lg:col-span-9 flex flex-col gap-4 h-full min-h-0">
-                <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden relative min-h-0 shadow-lg flex flex-col">
+            {/* Column 2: File Tree (Middle on Desktop, Top on Mobile) */}
+            <div className="lg:col-span-2 flex flex-col h-full min-h-0 order-1 lg:order-2">
+                <FileExplorer 
+                    files={state.activeTree === 'source' ? state.files : state.generatedFiles} 
+                    selectedFile={state.selectedFile} 
+                    activeTree={state.activeTree}
+                    onToggleTree={(mode) => setState(prev => ({ ...prev, activeTree: mode }))}
+                    onSelectFile={handleFileSelect}
+                />
+            </div>
+
+            {/* Column 3: Main Content (Right on Desktop, Middle on Mobile) */}
+            <div className="lg:col-span-6 flex flex-col h-full min-h-0 order-2 lg:order-3">
+                <div className="flex-1 bg-dark-800 rounded-xl border border-dark-700 overflow-hidden relative min-h-0 shadow-lg flex flex-col h-full">
                     {selectedNode && selectedNode.type === 'file' ? (
                         isImageFile(selectedNode.name) ? (
                             <div className="flex flex-col h-full">
