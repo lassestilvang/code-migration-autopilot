@@ -61,6 +61,11 @@ const App: React.FC = () => {
         <div className="flex-1 min-h-0 flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
             {mode === 'snippet' ? <SnippetMigration /> : <RepoMigration />}
         </div>
+        
+        {/* Footer */}
+        <footer className="text-center py-1 text-[10px] text-gray-600 font-mono shrink-0 select-none">
+          Crafted in <a href="https://en.wikipedia.org/wiki/Copenhagen" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-brand-400 transition-colors border-b border-transparent hover:border-brand-400/50">Copenhagen</a> with <a href="https://ai.studio/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400 transition-colors border-b border-transparent hover:border-blue-400/50">AI Studio</a> for <a href="https://gemini3.devpost.com/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-purple-400 transition-colors border-b border-transparent hover:border-purple-400/50">Gemini 3 Hackathon</a>.
+        </footer>
 
       </main>
     </div>
