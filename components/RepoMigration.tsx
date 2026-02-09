@@ -421,7 +421,9 @@ const RepoMigration: React.FC = () => {
                         </button>
                     )}
 
-                    <label className={`
+                    <label 
+                        title="Include Vitest/React Testing Library unit tests for components"
+                        className={`
                         flex items-center gap-2 text-sm cursor-pointer select-none transition-opacity
                         ${isAnalyzed ? 'opacity-100' : 'opacity-50 pointer-events-none'}
                     `}>
