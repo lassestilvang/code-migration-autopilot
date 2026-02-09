@@ -19,6 +19,19 @@ An intelligent, AI-powered tool designed to automate the migration of legacy cod
 - **Detailed Reports**: Provides a migration summary with modernization scores, test coverage estimates, and key improvements.
 - **Zip Download**: Download the fully migrated project as a zip file, ready to run.
 
+## Screenshots 📸
+
+<div align="center">
+  <img src="public/assets/screenshot-1.png" alt="Dashboard View" width="100%" />
+  <p><em>Real-time analysis and migration dashboard</em></p>
+</div>
+
+<div align="center">
+  <img src="public/assets/screenshot-2.png" alt="Migration Report" width="100%" />
+  <p><em>Detailed migration report and architecture visualization</em></p>
+</div>
+
+
 ## Tech Stack 🛠️
 
 - **Frontend**: React 19, Vite, Tailwind CSS
